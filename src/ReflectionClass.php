@@ -238,9 +238,8 @@ class ReflectionClass extends \ReflectionClass {
     }
     if ($imports) {
       // If $name maps directly to an imported namespace alias, use its FQCN.
-      // @todo Why basename()?
-      if (isset($imports[$alias = basename($name)])) {
-        return $imports[$alias];
+      if (isset($imports[$name])) {
+        return $imports[$name];
       }
       // Otherwise, check whether $name up until the first namespace separator
       // maps to an alias. If so, prefix $name with its FQCN.
