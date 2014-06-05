@@ -262,8 +262,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function getDocComment() {
-    $this->parse();
-    return $this->info[T_DOC_COMMENT];
+    return $this->parse()[T_DOC_COMMENT];
   }
 
   /**
@@ -355,9 +354,12 @@ class ReflectionClass extends \ReflectionClass {
   /**
    * {@inheritdoc}
    *
-   * @todo Implement.
+   * Note that only interfaces implemented directly on the statically reflected
+   * class are returned.
    */
-  //public function getInterfaceNames() {
+  public function getInterfaceNames() {
+    return $this->parse()[T_IMPLEMENTS];
+  }
 
   /**
    * {@inheritdoc}
@@ -377,8 +379,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function getNamespaceName() {
-    $this->parse();
-    return $this->info[T_NAMESPACE];
+    return $this->parse()[T_NAMESPACE];
   }
 
   /**
@@ -392,15 +393,15 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function implementsInterface($class) {
-    $this->parse();
+    $info = $this->parse();
     // Check for a direct match first.
-    if ($this->info[T_IMPLEMENTS]) {
-      if (in_array($class, $this->info[T_IMPLEMENTS], TRUE)) {
+    if ($info[T_IMPLEMENTS]) {
+      if (in_array($class, $info[T_IMPLEMENTS], TRUE)) {
         return TRUE;
       }
       // If there is no direct match, inspect each interface.
       // This causes interfaces and dependent classes to get autoloaded.
-      foreach ($this->info[T_IMPLEMENTS] as $interface) {
+      foreach ($info[T_IMPLEMENTS] as $interface) {
         if ($this->isSubclassOfReal($interface, $class)) {
           return TRUE;
         }
@@ -411,41 +412,38 @@ class ReflectionClass extends \ReflectionClass {
 
   /**
    * {@inheritdoc}
-   *
-   * @todo Implement.
    */
-  //public function inNamespace() {
+  public function inNamespace() {
+    return !empty($this->parse()[T_NAMESPACE]);
+  }
 
   /**
    * {@inheritdoc}
    */
   public function isAbstract() {
-    $this->parse();
-    return $this->info[T_ABSTRACT];
+    return $this->parse()[T_ABSTRACT];
   }
 
   /**
    * {@inheritdoc}
    */
   public function isFinal() {
-    $this->parse();
-    return $this->info[T_FINAL];
+    return $this->parse()[T_FINAL];
   }
 
   /**
    * {@inheritdoc}
    */
   public function isInstantiable() {
-    $this->parse();
-    return $this->info[T_CLASS] && !$this->info[T_ABSTRACT];
+    $info = $this->parse();
+    return $info[T_CLASS] && !$info[T_ABSTRACT];
   }
 
   /**
    * {@inheritdoc}
    */
   public function isInterface() {
-    $this->parse();
-    return $this->info[T_INTERFACE];
+    return !empty($this->parse()[T_INTERFACE]);
   }
 
   /**
@@ -466,23 +464,23 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function isSubclassOf($class) {
-    $this->parse();
+    $info = $this->parse();
     // Check for a direct match first.
-    if ($this->info[T_EXTENDS]) {
-      if (in_array($class, $this->info[T_EXTENDS], TRUE)) {
+    if ($info[T_EXTENDS]) {
+      if (in_array($class, $info[T_EXTENDS], TRUE)) {
         return TRUE;
       }
     }
     // Same as implementsInterface(), inlined to avoid autoloading on match.
-    if ($this->info[T_IMPLEMENTS]) {
-      if (in_array($class, $this->info[T_IMPLEMENTS], TRUE)) {
+    if ($info[T_IMPLEMENTS]) {
+      if (in_array($class, $info[T_IMPLEMENTS], TRUE)) {
         return TRUE;
       }
     }
     // If there is no direct match, inspect the parents of each parent.
-    if ($this->info[T_EXTENDS]) {
+    if ($info[T_EXTENDS]) {
       // This causes parent classes to be autoloaded.
-      foreach ($this->info[T_EXTENDS] as $parent) {
+      foreach ($info[T_EXTENDS] as $parent) {
         if ($this->isSubclassOfReal($parent, $class)) {
           return TRUE;
         }
@@ -516,14 +514,14 @@ class ReflectionClass extends \ReflectionClass {
    * @see ReflectionClass::isSubclassOf()
    */
   public function isSubclassOfAny(array $classes) {
-    $this->parse();
-    if ($this->info[T_EXTENDS]) {
-      if (array_intersect($this->info[T_EXTENDS], $classes)) {
+    $info = $this->parse();
+    if ($info[T_EXTENDS]) {
+      if (array_intersect($info[T_EXTENDS], $classes)) {
         return TRUE;
       }
     }
-    if ($this->info[T_IMPLEMENTS]) {
-      if (array_intersect($this->info[T_IMPLEMENTS], $classes)) {
+    if ($info[T_IMPLEMENTS]) {
+      if (array_intersect($info[T_IMPLEMENTS], $classes)) {
         return TRUE;
       }
     }
@@ -558,8 +556,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function isTrait() {
-    $this->parse();
-    return $this->info[T_TRAIT];
+    return !empty($this->parse()[T_TRAIT]);
   }
 
   /**

@@ -54,9 +54,41 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
     ),
   );
 
+  private $defaults = array(
+    T_DOC_COMMENT => '',
+    T_NAMESPACE => '',
+    T_USE => array(),
+    T_ABSTRACT => FALSE,
+    T_FINAL => FALSE,
+    T_CLASS => FALSE,
+    T_INTERFACE => FALSE,
+    T_TRAIT => FALSE,
+    T_EXTENDS => array(),
+    T_IMPLEMENTS => array(),
+  );
+
   public function setUp() {
     $this->name = 'Sun\StaticReflection\Fixtures\Example';
     $this->path = dirname(__DIR__) . '/fixtures/Example.php';
+  }
+
+  /**
+   * Returns a new ReflectionClass mock instance.
+   *
+   * @param array $return
+   *   The return value for ReflectionClass::parse().
+   *
+   * @return PHPUnit_Mock_Object
+   */
+  private function getClassReflectorMock(array $return = array()) {
+    $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', array('parse'), array($this->name, $this->path));
+
+    $reflector
+      ->expects($this->any())
+      ->method('parse')
+      ->will($this->returnValue($return + $this->defaults));
+
+    return $reflector;
   }
 
   /**
@@ -85,18 +117,6 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   }
 
   public function providerParseContentRegressions() {
-    $defaults = array(
-      T_DOC_COMMENT => '',
-      T_NAMESPACE => '',
-      T_USE => array(),
-      T_ABSTRACT => FALSE,
-      T_FINAL => FALSE,
-      T_CLASS => FALSE,
-      T_INTERFACE => FALSE,
-      T_TRAIT => FALSE,
-      T_EXTENDS => array(),
-      T_IMPLEMENTS => array(),
-    );
     $cases = array();
 
     $expected = [
@@ -156,7 +176,7 @@ class Baz {
     $cases[] = [$expected, $content];
 
     foreach ($cases as &$case) {
-      $case[0] += $defaults;
+      $case[0] += $this->defaults;
     }
     return $cases;
   }
@@ -314,6 +334,25 @@ EOC
   }
 
   /**
+   * @covers ::getInterfaceNames
+   * @dataProvider providerGetInterfaceNames
+   */
+  public function testGetInterfaceNames(array $interfaces) {
+    $reflector = $this->getClassReflectorMock(array(
+      T_IMPLEMENTS => $interfaces,
+    ));
+    $this->assertSame($interfaces, $reflector->getInterfaceNames());
+  }
+
+  public function providerGetInterfaceNames() {
+    return [
+      [[]],
+      [['FooInterface']],
+      [['FooInterface', 'Bar\BazInterface']],
+    ];
+  }
+
+  /**
    * @covers ::getName
    */
   public function testGetName() {
@@ -351,45 +390,96 @@ EOC
       [FALSE, $this->info[T_CLASS]],
       [FALSE, basename($this->info[T_CLASS])],
       [FALSE, $this->info[T_EXTENDS][0]],
-      [TRUE, $this->info[T_IMPLEMENTS][0]],
-      [TRUE, $this->info[T_IMPLEMENTS][1]],
-      [TRUE, $this->info[T_IMPLEMENTS][2]],
-      [TRUE, $this->info[T_IMPLEMENTS][3]],
+      [TRUE,  $this->info[T_IMPLEMENTS][0]],
+      [TRUE,  $this->info[T_IMPLEMENTS][1]],
+      [TRUE,  $this->info[T_IMPLEMENTS][2]],
+      [TRUE,  $this->info[T_IMPLEMENTS][3]],
       // Lastly, trigger an actual reflection.
-      [TRUE, 'Sun\StaticReflection\Fixtures\Base\InvisibleInterface'],
+      [TRUE,  'Sun\StaticReflection\Fixtures\Base\InvisibleInterface'],
     ];
   }
 
   /**
-   * @covers ::isAbstract
+   * @covers ::inNamespace
+   * @dataProvider providerInNamespace
    */
-  public function testIsAbstract() {
-    $reflector = new ReflectionClass($this->name, $this->path);
-    $this->assertSame(TRUE, $reflector->isAbstract());
+  public function testInNamespace($expected, $namespace, $class) {
+    $reflector = $this->getClassReflectorMock(array(
+      T_NAMESPACE => $namespace,
+      T_CLASS => $class,
+    ));
+    $this->assertSame($expected, $reflector->inNamespace());
+  }
+
+  public function providerInNamespace() {
+    return [
+      [FALSE, '', 'Foo'],
+      [TRUE,  'Foo', 'Bar'],
+      [TRUE,  'Foo\Bar', 'Baz'],
+    ];
+  }
+
+  public function providerIsBoolean() {
+    return [[FALSE], [TRUE]];
+  }
+
+  /**
+   * @covers ::isAbstract
+   * @dataProvider providerIsBoolean
+   */
+  public function testIsAbstract($value) {
+    $reflector = $this->getClassReflectorMock(array(
+      T_ABSTRACT => $value,
+    ));
+    $this->assertSame($value, $reflector->isAbstract());
   }
 
   /**
    * @covers ::isFinal
+   * @dataProvider providerIsBoolean
    */
-  public function testIsFinal() {
-    $reflector = new ReflectionClass($this->name, $this->path);
-    $this->assertSame(FALSE, $reflector->isFinal());
+  public function testIsFinal($value) {
+    $reflector = $this->getClassReflectorMock(array(
+      T_FINAL => $value,
+    ));
+    $this->assertSame($value, $reflector->isFinal());
   }
 
   /**
    * @covers ::isInstantiable
+   * @dataProvider providerIsInstantiable
    */
-  public function testIsInstantiable() {
-    $reflector = new ReflectionClass($this->name, $this->path);
-    $this->assertSame(FALSE, $reflector->isInstantiable());
+  public function testIsInstantiable($expected, $info) {
+    $reflector = $this->getClassReflectorMock($info);
+    $this->assertSame($expected, $reflector->isInstantiable());
+  }
+
+  public function providerIsInstantiable() {
+    return [
+      [FALSE, [T_ABSTRACT => TRUE]],
+      [FALSE, [T_INTERFACE => 'FooInterface']],
+      [FALSE, [T_TRAIT => 'FooTrait']],
+      [TRUE,  [T_CLASS => 'FooClass']],
+      [TRUE,  [T_CLASS => 'FooClass', T_FINAL => TRUE]],
+    ];
   }
 
   /**
    * @covers ::isInterface
+   * @dataProvider providerIsInterface
    */
-  public function testIsInterface() {
-    $reflector = new ReflectionClass($this->name, $this->path);
-    $this->assertSame(FALSE, $reflector->isInterface());
+  public function testIsInterface($expected, $info) {
+    $reflector = $this->getClassReflectorMock($info);
+    $this->assertSame($expected, $reflector->isInterface());
+  }
+
+  public function providerIsInterface() {
+    return [
+      [FALSE, [T_ABSTRACT => TRUE]],
+      [FALSE, [T_TRAIT => 'FooTrait']],
+      [FALSE, [T_CLASS => 'FooClass']],
+      [TRUE,  [T_INTERFACE => 'FooInterface']],
+    ];
   }
 
   /**
@@ -414,12 +504,12 @@ EOC
     return [
       [FALSE, $this->info[T_CLASS]],
       [FALSE, basename($this->info[T_CLASS])],
-      [TRUE, $this->info[T_EXTENDS][0]],
-      [TRUE, $this->info[T_IMPLEMENTS][0]],
-      [TRUE, $this->info[T_IMPLEMENTS][1]],
-      [TRUE, $this->info[T_IMPLEMENTS][2]],
-      [TRUE, $this->info[T_IMPLEMENTS][3]],
       [FALSE, 'Foo'],
+      [TRUE,  $this->info[T_EXTENDS][0]],
+      [TRUE,  $this->info[T_IMPLEMENTS][0]],
+      [TRUE,  $this->info[T_IMPLEMENTS][1]],
+      [TRUE,  $this->info[T_IMPLEMENTS][2]],
+      [TRUE,  $this->info[T_IMPLEMENTS][3]],
     ];
   }
 
@@ -448,15 +538,11 @@ EOC
    * @dataProvider providerIsSubclassOfAny
    */
   public function testIsSubclassOfAny($expected, array $parents, array $interfaces, array $candidates) {
-    $reflector = new ReflectionClass($this->name, $this->path);
-    $property = new \ReflectionProperty($reflector, 'info');
-    $property->setAccessible(TRUE);
-    $property->setValue($reflector, array(
+    $reflector = $this->getClassReflectorMock(array(
       T_EXTENDS => $parents,
       T_IMPLEMENTS => $interfaces,
     ));
-    $method = new \ReflectionMethod($reflector, 'isSubclassOfAny');
-    $this->assertSame($expected, $method->invoke($reflector, $candidates));
+    $this->assertSame($expected, $reflector->isSubclassOfAny($candidates));
   }
 
   public function providerIsSubclassOfAny() {
@@ -465,21 +551,32 @@ EOC
     return [
       [FALSE, $parents, $interfaces, ['OtherParent']],
       [FALSE, $parents, $interfaces, ['OtherParent1', 'OtherParent2']],
-      [TRUE, $parents, $interfaces, ['Parent1']],
-      [TRUE, $parents, $interfaces, ['Interface1']],
-      [TRUE, $parents, $interfaces, ['OtherParent', 'Parent1']],
-      [TRUE, $parents, $interfaces, ['NotImplemented', 'Interface1']],
-      [TRUE, $parents, $interfaces, ['Parent1', 'OtherParent']],
-      [TRUE, $parents, $interfaces, ['Interface1', 'NotImplemented']],
+      [TRUE,  $parents, $interfaces, ['Parent1']],
+      [TRUE,  $parents, $interfaces, ['Interface1']],
+      [TRUE,  $parents, $interfaces, ['OtherParent', 'Parent1']],
+      [TRUE,  $parents, $interfaces, ['NotImplemented', 'Interface1']],
+      [TRUE,  $parents, $interfaces, ['Parent1', 'OtherParent']],
+      [TRUE,  $parents, $interfaces, ['Interface1', 'NotImplemented']],
     ];
   }
 
   /**
    * @covers ::isTrait
+   * @dataProvider providerIsTrait
    */
-  public function testIsTrait() {
-    $reflector = new ReflectionClass($this->name, $this->path);
-    $this->assertSame(FALSE, $reflector->isTrait());
+  public function testIsTrait($expected, $info) {
+    $reflector = $this->getClassReflectorMock($info);
+    $this->assertSame($expected, $reflector->isTrait());
+  }
+
+  public function providerIsTrait() {
+    return [
+      [FALSE, [T_ABSTRACT => TRUE]],
+      [FALSE, [T_FINAL => TRUE]],
+      [FALSE, [T_INTERFACE => 'FooInterface']],
+      [FALSE, [T_CLASS => 'FooClass']],
+      [TRUE,  [T_TRAIT => 'FooTrait']],
+    ];
   }
 
   /**
