@@ -21,7 +21,7 @@ class ReflectionClass extends \ReflectionClass {
   private $info;
   private static $ancestorCache = array();
 
-  public function __construct($classname, $pathname = NULL) {
+  public function __construct($classname, $pathname) {
     $this->classname = $classname;
     $this->pathname = $pathname;
   }
@@ -55,6 +55,7 @@ class ReflectionClass extends \ReflectionClass {
       }
     }
     fclose($file);
+    unset($file);
 
     // Strip '{' and trailing whitespace from definition.
 //    $content = preg_replace('@[\{\s]+$@s', '', $content);
@@ -423,16 +424,13 @@ class ReflectionClass extends \ReflectionClass {
    * Enables tests to guarantee that classes are not autoloaded upon direct
    * match.
    */
-  private function isSubclassOfReal($ancestor, $child) {
+  private function isSubclassOfReal($ancestor, $class) {
     if (!isset(self::$ancestorCache[$ancestor])) {
       self::$ancestorCache[$ancestor] = array();
       self::$ancestorCache[$ancestor] += class_parents($ancestor) ?: array();
       self::$ancestorCache[$ancestor] += class_implements($ancestor) ?: array();
     }
-    return in_array($child, self::$ancestorCache[$ancestor], TRUE);
-
-    $result = is_subclass_of($ancestor, $child);
-    return $result;
+    return isset(self::$ancestorCache[$ancestor][$class]);
   }
 
   /**
