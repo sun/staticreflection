@@ -61,7 +61,7 @@ class ReflectionClass extends \ReflectionClass {
    */
   protected function reflect() {
     if (!isset($this->info)) {
-      $content = $this->readContent();
+      $content = $this->readFileHeader();
       $this->info = self::tokenize($content);
     }
     return $this->info;
@@ -70,11 +70,9 @@ class ReflectionClass extends \ReflectionClass {
   /**
    * Reads the PHP class file header.
    *
-   * @todo Rename to readFileHeader().
-   * @todo private
    * @todo Throw \ReflectionException on 404.
    */
-  public function readContent() {
+  private function readFileHeader() {
     $content = '';
 
     // \SplFileObject is very resource-intensive when operating on thousands of
