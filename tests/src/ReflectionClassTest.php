@@ -100,23 +100,27 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   }
 
   /**
-   * @covers ::parseContent
+   * @covers ::tokenize
    */
-  public function testParseContent() {
+  public function testTokenize() {
     $reflector = new ReflectionClass($this->name, $this->path);
-    $actual = $reflector->parseContent($reflector->readContent());
+    $method = new \ReflectionMethod($reflector, 'tokenize');
+    $method->setAccessible(TRUE);
+    $actual = $method->invoke($reflector, $reflector->readContent());
     $this->assertSame($this->info, $actual);
   }
 
   /**
-   * @covers ::parseContent
-   * @dataProvider providerParseContentRegressions
+   * @covers ::tokenize
+   * @dataProvider providerTokenizeRegressions
    */
-  public function testParseContentRegressions($expected, $content) {
-    $this->assertEquals($expected, ReflectionClass::parseContent($content));
+  public function testTokenizeRegressions($expected, $content) {
+    $method = new \ReflectionMethod('Sun\StaticReflection\ReflectionClass', 'tokenize');
+    $method->setAccessible(TRUE);
+    $this->assertEquals($expected, $method->invoke(NULL, $content));
   }
 
-  public function providerParseContentRegressions() {
+  public function providerTokenizeRegressions() {
     $cases = array();
 
     $expected = [

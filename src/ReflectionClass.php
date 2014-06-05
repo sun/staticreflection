@@ -62,7 +62,7 @@ class ReflectionClass extends \ReflectionClass {
   protected function reflect() {
     if (!isset($this->info)) {
       $content = $this->readContent();
-      $this->info = self::parseContent($content);
+      $this->info = self::tokenize($content);
     }
     return $this->info;
   }
@@ -95,10 +95,10 @@ class ReflectionClass extends \ReflectionClass {
   }
 
   /**
-   * Parses the file (header) content of a PHP class file.
+   * Tokenizes the file (header) content of a PHP class file.
    *
    * @param string $content
-   *   The PHP file (header) content to parse.
+   *   The PHP file (header) content to tokenize.
    *
    * @return array
    *   An associative array containing the parsed results, keyed by PHP
@@ -114,12 +114,9 @@ class ReflectionClass extends \ReflectionClass {
    * This is a vastly simplified re-implementation of Doctrine's TokenParser.
    * @see \Doctrine\Common\Annotations\TokenParser
    *
-   * @todo Rename to parseFileHeader().
-   * @todo private
-   * @todo Add separate public static utility helper method that translates the
-   *   return value.
+   * @todo Add public static utility method returning translated values.
    */
-  public static function parseContent($content) {
+  private static function tokenize($content) {
     $tokens = token_get_all($content);
 
     $result = array(
@@ -229,7 +226,7 @@ class ReflectionClass extends \ReflectionClass {
    *   The name to resolve against $namespace.
    * @param array $imports
    *   An associative array of imported namespaces, keyed by local alias, as
-   *   parsed by ReflectionClass::parseContent().
+   *   parsed by ReflectionClass::tokenize().
    *
    * @return string
    *   $name resolved against $namespace and $imports.
