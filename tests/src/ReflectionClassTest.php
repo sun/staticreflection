@@ -71,8 +71,6 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
    * @covers ::parseContent
    */
   public function testParseContent() {
-    #$this->markTestIncomplete();
-
     $reflector = new ReflectionClass($this->name, $this->path);
     $actual = $reflector->parseContent($reflector->readContent());
     $this->assertSame($this->info, $actual);
@@ -83,8 +81,6 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
    * @dataProvider providerParseContentRegressions
    */
   public function testParseContentRegressions($expected, $content) {
-//    $reflector = new ReflectionClass($this->name, $this->path);
-//    $actual = $reflector->parseContent($reflector->readContent());
     $this->assertEquals($expected, ReflectionClass::parseContent($content));
   }
 
@@ -170,8 +166,6 @@ class Baz {
    * @dataProvider providerResolveName
    */
   public function testResolveName($expected, $namespace, $name, $imports = array()) {
-    #$this->markTestIncomplete();
-
     $reflector = new ReflectionClass($this->name, $this->path);
     $method = new \ReflectionMethod($reflector, 'resolveName');
     $method->setAccessible(TRUE);
@@ -203,7 +197,7 @@ class Baz {
       ['Imported\Name',        '', 'Name', ['Name' => 'Imported\Name']],
       ['Imported\Name',        'Namespace', 'Name', ['Name' => 'Imported\Name']],
       ['Imported\Space\Name',  'Namespace', 'Space\Name', ['Space' => 'Imported\Space']],
-      // Aliases.
+      // @todo Aliases.
     ];
   }
 

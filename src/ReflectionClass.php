@@ -2,17 +2,37 @@
 
 /**
  * @file
- * 
+ * Contains \Sun\StaticReflection\ReflectionClass.
  */
 
 namespace Sun\StaticReflection;
 
 /**
- * 
+ * Statically reflects a PHP class.
  *
- * Wraps \ReflectionClass for type-hint compatibility.
+ * Use this class when operating on many PHP class files that have been
+ * discovered upfront and which need to be minimally validated at the
+ * class-level (e.g., testing for base classes/interfaces).
+ *
+ * Native PHP facilities like \ReflectionClass and is_subclass_of() would:
+ * 1. trigger the classloader to autoload each file
+ * 2. trigger the classloader to recursively autoload all parent classes and
+ *    interfaces
+ * 3. exceed reasonable CPU and memory consumption very quickly.
+ *
+ * Usage is identical to \ReflectionClass. For that reason (and type-hint
+ * compatibility), this class wraps \ReflectionClass.
+ *
+ * Note: The read-only public property \ReflectionClass::$name does not get
+ * populated by this implementation. Use ReflectionClass::getName() instead.
+ *
+ * Optionally, the doc comment block of the statically reflected class can be
+ * parsed for its PHPDoc summary line as well as (simple) tags/annotations.
  *
  * @author Daniel F. Kudwien (sun)
+ *
+ * @todo Dynamically instantiate the wrapped \ReflectionClass in case a parent
+ *   method requiring native/non-static reflection is called.
  */
 class ReflectionClass extends \ReflectionClass {
 
@@ -21,11 +41,24 @@ class ReflectionClass extends \ReflectionClass {
   private $info;
   private static $ancestorCache = array();
 
+  /**
+   * Constructs a new ReflectionClass.
+   *
+   * @param string $classname
+   *   The fully-qualified class name (FQCN) to reflect.
+   * @param string $pathname
+   *   The pathname of the file containing $classname.
+   */
   public function __construct($classname, $pathname) {
     $this->classname = $classname;
     $this->pathname = $pathname;
   }
 
+  /**
+   * Parses the class file.
+   *
+   * @todo private
+   */
   public function parse() {
     if (isset($this->info)) {
       return $this->info;
@@ -35,18 +68,17 @@ class ReflectionClass extends \ReflectionClass {
     return $this->info;
   }
 
+  /**
+   * Reads the header content of the PHP class file.
+   *
+   * @todo Rename to readFileHeader().
+   * @todo private
+   */
   public function readContent() {
     $content = '';
 
-    // @todo SplFileObject is a CPU/memory hog of its own.
-//    $file = new \SplFileObject($this->pathname);
-//    while (!$file->eof()) {
-//      $lines[] = $line = $file->fgets();
-//      if (preg_match('@^\s*(?:(?:abstract|final)\s+)?(?:interface|class|trait)\s+\w+@', $line)) {
-//        break;
-//      }
-//    }
-//    unset($file);
+    // \SplFileObject is very resource-intensive when operating on thousands of
+    // files. Use legacy functions until PHP core improves.
     $file = fopen($this->pathname, 'r');
     while (FALSE !== $line = fgets($file)) {
       $content .= $line;
@@ -58,29 +90,37 @@ class ReflectionClass extends \ReflectionClass {
     unset($file);
 
     // Strip '{' and trailing whitespace from definition.
-//    $content = preg_replace('@[\{\s]+$@s', '', $content);
     $content = trim($content, " \t\r\n{");
-
     return $content;
   }
 
   /**
+   * Parses the file (header) content of a PHP class file.
    *
+   * @param string $content
+   *   The PHP file (header) content to parse.
    *
-   * Vastly simplified re-implementation of Doctrine's TokenParser.
+   * @return array
+   *   An associative array containing the parsed results, keyed by PHP
+   *   Tokenizer tokens:
+   *   - T_NAMESPACE: The namespace (if any).
+   *   - One of T_CLASS, T_INTERFACE, T_TRAIT: The FQCN of the parsed element
+   *     (the other two will be FALSE).
+   *   - T_EXTENDS, T_IMPLEMENTS: FQCNs of ancestors.
+   *   - T_USE: Imported namespaces (if any), keyed by local alias.
+   *   - T_ABSTRACT, T_FINAL: Respective Boolean flags.
+   *   - T_DOC_COMMENT: The doc comment block of the class.
    *
+   * This is a vastly simplified re-implementation of Doctrine's TokenParser.
    * @see \Doctrine\Common\Annotations\TokenParser
+   *
+   * @todo Rename to parseFileHeader().
+   * @todo private
+   * @todo Add separate public static utility helper method that translates the
+   *   return value.
    */
   public static function parseContent($content) {
     $tokens = token_get_all($content);
-
-//    $debug = $tokens;
-//    foreach ($debug as &$token) {
-//      if (is_array($token)) {
-//        $token[0] = token_name($token[0]);
-//      }
-//    }
-//    echo var_dump($debug), "\n";
 
     $result = array(
       T_DOC_COMMENT => array(),
@@ -181,16 +221,32 @@ class ReflectionClass extends \ReflectionClass {
   }
 
   /**
-   * 
+   * Resolves the name of an ancestor class.
+   *
+   * @param string $namespace
+   *   The namespace context of the parsed class.
+   * @param string $name
+   *   The name to resolve against $namespace.
+   * @param array $imports
+   *   An associative array of imported namespaces, keyed by local alias, as
+   *   parsed by ReflectionClass::parseContent().
+   *
+   * @return string
+   *   $name resolved against $namespace and $imports.
    */
   private static function resolveName($namespace, $name, $imports = array()) {
+    // Strip namespace prefix, if any.
     if ($name[0] === '\\') {
       return substr($name, 1);
     }
     if ($imports) {
+      // If $name maps directly to an imported namespace alias, use its FQCN.
+      // @todo Why basename()?
       if (isset($imports[$alias = basename($name)])) {
         return $imports[$alias];
       }
+      // Otherwise, check whether $name up until the first namespace separator
+      // maps to an alias. If so, prefix $name with its FQCN.
       $space = strtok($name, '\\');
       if (isset($imports[$space])) {
         return $imports[$space] . substr($name, strlen($space));
@@ -202,16 +258,22 @@ class ReflectionClass extends \ReflectionClass {
     return $namespace . '\\' . $name;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getDocComment() {
     $this->parse();
     return $this->info[T_DOC_COMMENT];
   }
 
   /**
-   * 
+   * Parses the doc block comment of the class.
    *
-   * @see \PHPUnit_Util_Test::parseAnnotations()
-   * @see \Tonic\Application::parseDocComment()
+   * @return array
+   *   An associative array whose key 'summary' contains the PHPDoc summary line
+   *   of the class. Other keys contain the PHPDoc tags/annotations (if any).
+   *
+   * @todo Replace with separate getDocCommentSummary() + getAnnotations() methods.
    */
   public function parseDocComment() {
     $docblock = $this->getDocComment();
@@ -222,13 +284,16 @@ class ReflectionClass extends \ReflectionClass {
   }
 
   /**
-   * 
+   * Parses the summary line from the class doc comment block.
    *
    * @param string $docblock
    *   The doc comment block to parse.
    *
    * @return string
    *   The parsed PHPDoc summary line.
+   *
+   * @todo Split docblock cleaning/stripping into separate method.
+   * @todo private
    */
   public function parseSummary($docblock) {
     $content = preg_replace([
@@ -251,17 +316,19 @@ class ReflectionClass extends \ReflectionClass {
   }
 
   /**
-   * 
+   * Parses PHPDoc tags/annotations from the class doc comment block.
    *
    * @param string $docblock
    *   The doc comment block to parse.
    *
    * @return array
-   *   The parsed annotations.
+   *   The parsed annotations. Each value is an array of values.
    *
    * @see \PHPUnit_Util_Test::parseAnnotations()
    * @author Sebastian Bergmann <sebastian@phpunit.de>
    * @copyright 2001-2014 Sebastian Bergmann <sebastian@phpunit.de>
+   *
+   * @todo private
    */
   public function parseAnnotations($docblock) {
     $annotations = array();
@@ -285,18 +352,38 @@ class ReflectionClass extends \ReflectionClass {
     return $this->pathname;
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @todo Implement.
+   */
   //public function getInterfaceNames() {
+
+  /**
+   * {@inheritdoc}
+   *
+   * @todo Implement.
+   */
   //public function getModifiers() {
 
+  /**
+   * {@inheritdoc}
+   */
   public function getName() {
     return $this->classname;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getNamespaceName() {
     $this->parse();
     return $this->info[T_NAMESPACE];
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getShortName() {
     return basename($this->classname);
   }
@@ -311,7 +398,7 @@ class ReflectionClass extends \ReflectionClass {
       if (in_array($class, $this->info[T_IMPLEMENTS], TRUE)) {
         return TRUE;
       }
-      // If no direct match, inspect each interface.
+      // If there is no direct match, inspect each interface.
       // This causes interfaces and dependent classes to get autoloaded.
       foreach ($this->info[T_IMPLEMENTS] as $interface) {
         if ($this->isSubclassOfReal($interface, $class)) {
@@ -322,6 +409,11 @@ class ReflectionClass extends \ReflectionClass {
     return FALSE;
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @todo Implement.
+   */
   //public function inNamespace() {
 
   /**
@@ -346,7 +438,6 @@ class ReflectionClass extends \ReflectionClass {
   public function isInstantiable() {
     $this->parse();
     return $this->info[T_CLASS] && !$this->info[T_ABSTRACT];
-    return !$this->info[T_ABSTRACT] && !$this->info[T_INTERFACE] && !$this->info[T_TRAIT];
   }
 
   /**
@@ -364,6 +455,11 @@ class ReflectionClass extends \ReflectionClass {
     return FALSE;
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @todo Implement.
+   */
   //public function isIterateable() {
 
   /**
@@ -383,7 +479,7 @@ class ReflectionClass extends \ReflectionClass {
         return TRUE;
       }
     }
-    // If no direct match, inspect the parents of each parent.
+    // If there is no direct match, inspect the parents of each parent.
     if ($this->info[T_EXTENDS]) {
       // This causes parent classes to be autoloaded.
       foreach ($this->info[T_EXTENDS] as $parent) {
@@ -396,12 +492,28 @@ class ReflectionClass extends \ReflectionClass {
   }
 
   /**
-   * Returns whether the reflected class is a subclass of one of the specified
-   * classes.
+   * Returns whether the statically reflected class is a subclass of one of the
+   * given classes.
    *
    * Same as isSubclassOf(), but allows to check multiple classes at once for a
    * direct match (as an OR condition), so as to avoid autoloading of all parent
    * classes and interfaces.
+   *
+   * Only use this as a separate precondition prior to calling
+   * ReflectionClass::isSubclassOf() in order to improve performance when
+   * testing many classes that commonly extend from certain base classes or
+   * implement certain interfaces.
+   *
+   * @param string[] $classes
+   *   A list of FQCNs to test against the statically reflected class.
+   *
+   * @return bool
+   *   TRUE if the statically reflected class is a subclass of any class in
+   *   $classes, FALSE otherwise. Note that indirect ancestor classes are NOT
+   *   resolved; only direct matches in the statically reflected class may be
+   *   found.
+   *
+   * @see ReflectionClass::isSubclassOf()
    */
   public function isSubclassOfAny(array $classes) {
     $this->parse();
@@ -419,10 +531,19 @@ class ReflectionClass extends \ReflectionClass {
   }
 
   /**
-   * Wrapper around is_subclass_of().
+   * Returns whether a class is a subclass of a given class.
    *
-   * Enables tests to guarantee that classes are not autoloaded upon direct
-   * match.
+   * To avoid loading the statically reflected class itself, this
+   * re-implementation of is_subclass_of() is used to test against the ancestor
+   * classes only (which will be reflected by PHP core); i.e., only the parent
+   * class and interfaces.
+   *
+   * It uses an internal cache, because it is assumed that many classes inherit
+   * from the same ancestors.
+   *
+   * @see is_subclass_of()
+   *
+   * @todo Rename into something less "real".
    */
   private function isSubclassOfReal($ancestor, $class) {
     if (!isset(self::$ancestorCache[$ancestor])) {

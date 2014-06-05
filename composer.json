@@ -2,7 +2,7 @@
     "name": "sun/staticreflection",
     "description": "Static PHP class code reflection for post-discovery scenarios.",
     "license": "MIT",
-    "keywords": ["reflection", "token", "parser", "discovery", "phpdoc", "annotation"],
+    "keywords": ["reflection", "token", "parser", "discovery", "autoload", "phpdoc", "annotation"],
     "authors": [
         {
             "name": "Daniel F. Kudwien (sun)",
