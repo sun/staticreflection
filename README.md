@@ -1,4 +1,3 @@
-staticreflection
-================
+# StaticReflection
+_Static PHP class code reflection for post-discovery scenarios._
 
-Static PHP class code reflection for post-discovery scenarios.

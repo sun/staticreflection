@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phpunit
+  bootstrap="vendor/autoload.php"
+  forceCoversAnnotation="true"
+  strict="true"
+  colors="true"
+>
+
+  <testsuites>
+    <testsuite name="StaticReflection Test Suite">
+      <directory>./tests/src</directory>
+    </testsuite>
+  </testsuites>
+
+  <!-- Filter for coverage reports. -->
+  <filter>
+    <blacklist>
+      <directory>./tests/fixtures</directory>
+      <directory>./vendor</directory>
+    </blacklist>
+  </filter>
+</phpunit>
