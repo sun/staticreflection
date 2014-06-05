@@ -271,8 +271,8 @@ class ReflectionClass extends \ReflectionClass {
   public function parseDocComment() {
     $docblock = $this->getDocComment();
     $result = array();
-    $result['summary'] = $this->parseSummary($docblock);
-    $result += $this->parseAnnotations($docblock);
+    $result['summary'] = self::parseSummary($docblock);
+    $result += self::parseAnnotations($docblock);
     return $result;
   }
 
@@ -286,9 +286,8 @@ class ReflectionClass extends \ReflectionClass {
    *   The parsed PHPDoc summary line.
    *
    * @todo Split docblock cleaning/stripping into separate method.
-   * @todo private
    */
-  public function parseSummary($docblock) {
+  private static function parseSummary($docblock) {
     $content = preg_replace([
       // Strip trailing '*/', leading '/**', and '*' prefixes.
       '@^[ \t]*\*+/$|^[ \t]*/?\*+[ \t]*@m',
@@ -320,10 +319,8 @@ class ReflectionClass extends \ReflectionClass {
    * @see \PHPUnit_Util_Test::parseAnnotations()
    * @author Sebastian Bergmann <sebastian@phpunit.de>
    * @copyright 2001-2014 Sebastian Bergmann <sebastian@phpunit.de>
-   *
-   * @todo private
    */
-  public function parseAnnotations($docblock) {
+  private static function parseAnnotations($docblock) {
     $annotations = array();
     // Strip away the docblock header and footer to ease parsing of one line
     // annotations.

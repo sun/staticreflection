@@ -254,8 +254,9 @@ class Baz {
    * @dataProvider providerParseSummary
    */
   public function testParseSummary($expected, $docblock) {
-    $reflector = new ReflectionClass($this->name, $this->path);
-    $this->assertSame($expected, $reflector->parseSummary($docblock));
+    $method = new \ReflectionMethod('Sun\StaticReflection\ReflectionClass', 'parseSummary');
+    $method->setAccessible(TRUE);
+    $this->assertSame($expected, $method->invoke(NULL, $docblock));
   }
 
   public function providerParseSummary() {
