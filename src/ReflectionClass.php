@@ -55,24 +55,24 @@ class ReflectionClass extends \ReflectionClass {
   }
 
   /**
-   * Parses the class file.
+   * Statically reflects the PHP class file.
    *
-   * @todo private
+   * @todo Throw \ReflectionException if classname/pathname != actual.
    */
-  public function parse() {
-    if (isset($this->info)) {
-      return $this->info;
+  protected function reflect() {
+    if (!isset($this->info)) {
+      $content = $this->readContent();
+      $this->info = self::parseContent($content);
     }
-    $content = $this->readContent();
-    $this->info = self::parseContent($content);
     return $this->info;
   }
 
   /**
-   * Reads the header content of the PHP class file.
+   * Reads the PHP class file header.
    *
    * @todo Rename to readFileHeader().
    * @todo private
+   * @todo Throw \ReflectionException on 404.
    */
   public function readContent() {
     $content = '';
@@ -89,7 +89,7 @@ class ReflectionClass extends \ReflectionClass {
     fclose($file);
     unset($file);
 
-    // Strip '{' and trailing whitespace from definition.
+    // Strip '{' and (most importantly trailing) whitespace from definition.
     $content = trim($content, " \t\r\n{");
     return $content;
   }
@@ -262,7 +262,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function getDocComment() {
-    return $this->parse()[T_DOC_COMMENT];
+    return $this->reflect()[T_DOC_COMMENT];
   }
 
   /**
@@ -358,7 +358,7 @@ class ReflectionClass extends \ReflectionClass {
    * class are returned.
    */
   public function getInterfaceNames() {
-    return $this->parse()[T_IMPLEMENTS];
+    return $this->reflect()[T_IMPLEMENTS];
   }
 
   /**
@@ -379,7 +379,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function getNamespaceName() {
-    return $this->parse()[T_NAMESPACE];
+    return $this->reflect()[T_NAMESPACE];
   }
 
   /**
@@ -393,7 +393,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function implementsInterface($class) {
-    $info = $this->parse();
+    $info = $this->reflect();
     // Check for a direct match first.
     if ($info[T_IMPLEMENTS]) {
       if (in_array($class, $info[T_IMPLEMENTS], TRUE)) {
@@ -414,28 +414,28 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function inNamespace() {
-    return !empty($this->parse()[T_NAMESPACE]);
+    return !empty($this->reflect()[T_NAMESPACE]);
   }
 
   /**
    * {@inheritdoc}
    */
   public function isAbstract() {
-    return $this->parse()[T_ABSTRACT];
+    return $this->reflect()[T_ABSTRACT];
   }
 
   /**
    * {@inheritdoc}
    */
   public function isFinal() {
-    return $this->parse()[T_FINAL];
+    return $this->reflect()[T_FINAL];
   }
 
   /**
    * {@inheritdoc}
    */
   public function isInstantiable() {
-    $info = $this->parse();
+    $info = $this->reflect();
     return $info[T_CLASS] && !$info[T_ABSTRACT];
   }
 
@@ -443,7 +443,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function isInterface() {
-    return !empty($this->parse()[T_INTERFACE]);
+    return !empty($this->reflect()[T_INTERFACE]);
   }
 
   /**
@@ -464,7 +464,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function isSubclassOf($class) {
-    $info = $this->parse();
+    $info = $this->reflect();
     // Check for a direct match first.
     if ($info[T_EXTENDS]) {
       if (in_array($class, $info[T_EXTENDS], TRUE)) {
@@ -514,7 +514,7 @@ class ReflectionClass extends \ReflectionClass {
    * @see ReflectionClass::isSubclassOf()
    */
   public function isSubclassOfAny(array $classes) {
-    $info = $this->parse();
+    $info = $this->reflect();
     if ($info[T_EXTENDS]) {
       if (array_intersect($info[T_EXTENDS], $classes)) {
         return TRUE;
@@ -556,7 +556,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function isTrait() {
-    return !empty($this->parse()[T_TRAIT]);
+    return !empty($this->reflect()[T_TRAIT]);
   }
 
   /**

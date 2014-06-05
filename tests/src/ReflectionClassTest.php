@@ -76,16 +76,16 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
    * Returns a new ReflectionClass mock instance.
    *
    * @param array $return
-   *   The return value for ReflectionClass::parse().
+   *   The return value for ReflectionClass::reflect().
    *
    * @return PHPUnit_Mock_Object
    */
   private function getClassReflectorMock(array $return = array()) {
-    $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', array('parse'), array($this->name, $this->path));
+    $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', array('reflect'), array($this->name, $this->path));
 
     $reflector
       ->expects($this->any())
-      ->method('parse')
+      ->method('reflect')
       ->will($this->returnValue($return + $this->defaults));
 
     return $reflector;
