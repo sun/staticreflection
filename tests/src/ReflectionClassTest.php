@@ -97,6 +97,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   public function testConstruct() {
     $reflector = new ReflectionClass($this->name, $this->path);
     $this->assertFalse(class_exists($this->name, FALSE));
+    $this->assertInstanceOf('\ReflectionClass', $reflector);
   }
 
   /**
@@ -108,6 +109,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
     $method->setAccessible(TRUE);
     $actual = $method->invoke($reflector);
     $this->assertSame($this->info, $actual);
+    $this->assertFalse(class_exists($this->name, FALSE));
   }
 
   /**
