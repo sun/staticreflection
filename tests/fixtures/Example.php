@@ -2,15 +2,15 @@
 
 /**
  * @file
- * Contains \Sun\StaticReflection\Fixtures\Example.
+ * Contains \Sun\Tests\StaticReflection\Fixtures\Example.
  *
  * Some description.
  */
 
-namespace Sun\StaticReflection\Fixtures;
+namespace Sun\Tests\StaticReflection\Fixtures;
 
 use Sun\StaticReflection\ReflectionClass; // The thing.
-use Sun\StaticReflection\Fixtures\Base\ImportedInterface;
+use Sun\Tests\StaticReflection\Fixtures\Base\ImportedInterface;
 use Foo
   // Name clash.
   as FooAlias;

@@ -18,8 +18,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Sun\\StaticReflection\\Tests\\": "tests/src/",
-            "Sun\\StaticReflection\\Fixtures\\": "tests/fixtures/"
+            "Sun\\Tests\\StaticReflection\\": "tests/src/",
+            "Sun\\Tests\\StaticReflection\\Fixtures\\": "tests/fixtures/"
         }
     }
 }

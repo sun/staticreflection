@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Sun\StaticReflection\Tests\ReflectionClassTest.
+ * Contains \Sun\Tests\StaticReflection\ReflectionClassTest.
  */
 
-namespace Sun\StaticReflection\Tests;
+namespace Sun\Tests\StaticReflection;
 
 use Sun\StaticReflection\ReflectionClass;
 
@@ -32,24 +32,24 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
  *
  * @see Example1Interface
  */',
-    T_NAMESPACE => 'Sun\StaticReflection\Fixtures',
+    T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
     T_USE => array(
       'ReflectionClass' => 'Sun\StaticReflection\ReflectionClass',
-      'ImportedInterface' => 'Sun\StaticReflection\Fixtures\Base\ImportedInterface',
+      'ImportedInterface' => 'Sun\Tests\StaticReflection\Fixtures\Base\ImportedInterface',
       'Foo' => 'Foo',
     ),
     T_ABSTRACT => TRUE,
     T_FINAL => FALSE,
-    T_CLASS => 'Sun\StaticReflection\Fixtures\Example',
+    T_CLASS => 'Sun\Tests\StaticReflection\Fixtures\Example',
     T_INTERFACE => FALSE,
     T_TRAIT => FALSE,
     T_EXTENDS => array(
-      'Sun\StaticReflection\Fixtures\Base\Example',
+      'Sun\Tests\StaticReflection\Fixtures\Base\Example',
     ),
     T_IMPLEMENTS => array(
-      'Sun\StaticReflection\Fixtures\Example1Interface',
-      'Sun\StaticReflection\Fixtures\Base\Example2Interface',
-      'Sun\StaticReflection\Fixtures\Base\ImportedInterface',
+      'Sun\Tests\StaticReflection\Fixtures\Example1Interface',
+      'Sun\Tests\StaticReflection\Fixtures\Base\Example2Interface',
+      'Sun\Tests\StaticReflection\Fixtures\Base\ImportedInterface',
       'Countable',
     ),
   );
@@ -68,8 +68,17 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   );
 
   public function setUp() {
-    $this->name = 'Sun\StaticReflection\Fixtures\Example';
+    $this->name = 'Sun\Tests\StaticReflection\Fixtures\Example';
     $this->path = dirname(__DIR__) . '/fixtures/Example.php';
+  }
+
+  /**
+   * @runInSeparateProcess
+   */
+  public function testSetUp() {
+    $this->assertTrue(class_exists($this->name));
+    $path = realpath($this->path);
+    $this->assertSame($path, (new \ReflectionClass($this->name))->getFileName());
   }
 
   /**
@@ -402,7 +411,7 @@ EOC
       [TRUE,  $this->info[T_IMPLEMENTS][2]],
       [TRUE,  $this->info[T_IMPLEMENTS][3]],
       // Lastly, trigger an actual reflection.
-      [TRUE,  'Sun\StaticReflection\Fixtures\Base\InvisibleInterface'],
+      [TRUE,  'Sun\Tests\StaticReflection\Fixtures\Base\InvisibleInterface'],
     ];
   }
 
@@ -522,7 +531,7 @@ EOC
 
   public function providerIsSubclassOfDeep() {
     return [
-      [TRUE, 'Sun\StaticReflection\Fixtures\Base\InvisibleInterface'],
+      [TRUE, 'Sun\Tests\StaticReflection\Fixtures\Base\InvisibleInterface'],
     ];
   }
 

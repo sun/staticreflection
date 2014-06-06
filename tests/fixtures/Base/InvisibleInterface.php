@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Sun\StaticReflection\Fixtures\Base\InvisibleInterface.
+ * Contains \Sun\Tests\StaticReflection\Fixtures\Base\InvisibleInterface.
  */
 
-namespace Sun\StaticReflection\Fixtures\Base;
+namespace Sun\Tests\StaticReflection\Fixtures\Base;
 
 /**
  * Interface of interface.

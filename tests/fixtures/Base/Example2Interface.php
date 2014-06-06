@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Sun\StaticReflection\Fixtures\Base\Example2Interface.
+ * Contains \Sun\Tests\StaticReflection\Fixtures\Base\Example2Interface.
  */
 
-namespace Sun\StaticReflection\Fixtures\Base;
+namespace Sun\Tests\StaticReflection\Fixtures\Base;
 
 /**
  * Example interface.

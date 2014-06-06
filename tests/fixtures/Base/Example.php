@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Sun\StaticReflection\Fixtures\Base\Example.
+ * Contains \Sun\Tests\StaticReflection\Fixtures\Base\Example.
  */
 
-namespace Sun\StaticReflection\Fixtures\Base;
+namespace Sun\Tests\StaticReflection\Fixtures\Base;
 
 abstract class Example {
 }
