@@ -8,10 +8,14 @@ php:
 before_script:
   - composer self-update
   - composer --prefer-source install
+  - composer require -n satooshi/php-coveralls:dev-master
 
 script:
-  - phpunit --coverage-text
+  - phpunit --coverage-text --coverage-clover build/logs/clover.xml
 
 matrix:
   allow_failures:
     - php: hhvm
+
+after_success:
+  - php vendor/bin/coveralls -v
