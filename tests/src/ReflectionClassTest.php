@@ -603,4 +603,21 @@ EOC
     $this->assertSame(TRUE, $reflector->isUserDefined());
   }
 
+  /**
+   * @covers ::basename
+   * @dataProvider providerBasename
+   */
+  public function testBasename($expected, $fqcn) {
+    $this->assertSame($expected, ReflectionClass::basename($fqcn));
+  }
+
+  public function providerBasename() {
+    return [
+      ['Example', 'Sun\Tests\StaticReflection\Fixtures\Example'],
+      ['Example', '\Sun\Tests\StaticReflection\Fixtures\Example'],
+      ['Example', 'Example'],
+      ['Example', '\Example'],
+    ];
+  }
+
 }

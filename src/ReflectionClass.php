@@ -192,7 +192,7 @@ class ReflectionClass extends \ReflectionClass {
 
     // Prepare import aliases.
     foreach ($result[T_USE] as $alias => $fqcn) {
-      $result[T_USE][basename($fqcn)] = $fqcn;
+      $result[T_USE][self::basename($fqcn)] = $fqcn;
       unset($result[T_USE][$alias]);
     }
 
@@ -377,7 +377,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function getShortName() {
-    return basename($this->classname);
+    return self::basename($this->classname);
   }
 
   /**
@@ -555,6 +555,26 @@ class ReflectionClass extends \ReflectionClass {
    */
   public function isUserDefined() {
     return TRUE;
+  }
+
+  /**
+   * Returns the basename (short name) of a class name.
+   *
+   * @param string $fqcn
+   *   The fully-qualified class name for which to return the basename.
+   *
+   * @return string
+   *
+   * This function is named basename(), because basename() natively supports the
+   * operation, but only on Windows. PHP core does not provide a native function.
+   * This algorithm requires two lines of code, but has been measured to be the
+   * most performant user space implementation.
+   *
+   * @see basename()
+   */
+  public static function basename($fqcn) {
+    $parts = explode('\\', $fqcn);
+    return end($parts);
   }
 
 }
