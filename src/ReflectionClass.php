@@ -121,6 +121,7 @@ class ReflectionClass extends \ReflectionClass {
       T_DOC_COMMENT => array(),
       T_NAMESPACE => '',
       T_USE => array(),
+      T_AS => '',
       T_ABSTRACT => FALSE,
       T_FINAL => FALSE,
       T_CLASS => '',
@@ -162,10 +163,7 @@ class ReflectionClass extends \ReflectionClass {
         }
         // Not a result context; append content to last result context.
         elseif (isset($context_id)) {
-          if ($id === T_AS) {
-            unset($context, $context_id);
-          }
-          elseif ($id !== T_WHITESPACE && $id !== T_COMMENT) {
+          if ($id !== T_WHITESPACE && $id !== T_COMMENT) {
             $context .= $token[1];
           }
         }
@@ -179,6 +177,12 @@ class ReflectionClass extends \ReflectionClass {
         }
         // Force-terminate last result context upon PHP statement delimiters.
         elseif ($token === ';' || $token === '{') {
+          // When terminating 'as', inject the alias into last 'use' statement.
+          if ($context_id === T_AS) {
+            $import = array_pop($result[T_USE]);
+            $result[T_USE][$context] = $import;
+            $context = '';
+          }
           unset($context, $context_id);
         }
         else {
@@ -191,10 +195,17 @@ class ReflectionClass extends \ReflectionClass {
     $result[T_DOC_COMMENT] = end($result[T_DOC_COMMENT]) ?: '';
 
     // Prepare import aliases.
-    foreach ($result[T_USE] as $alias => $fqcn) {
-      $result[T_USE][self::basename($fqcn)] = $fqcn;
-      unset($result[T_USE][$alias]);
+    $imports = array();
+    foreach ($result[T_USE] as $key => $fqcn) {
+      if (is_int($key)) {
+        $imports[self::basename($fqcn)] = $fqcn;
+      }
+      else {
+        $imports[$key] = $fqcn;
+      }
     }
+    $result[T_USE] = $imports;
+    unset($result[T_AS]);
 
     // Resolve class, parent class and interface names.
     foreach (array(T_CLASS, T_INTERFACE, T_TRAIT) as $id) {

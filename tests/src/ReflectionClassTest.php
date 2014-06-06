@@ -36,7 +36,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
     T_USE => array(
       'ReflectionClass' => 'Sun\StaticReflection\ReflectionClass',
       'ImportedInterface' => 'Sun\Tests\StaticReflection\Fixtures\Base\ImportedInterface',
-      'Foo' => 'Foo',
+      'FooAlias' => 'Foo',
     ),
     T_ABSTRACT => TRUE,
     T_FINAL => FALSE,
@@ -178,6 +178,22 @@ class Space
     $cases[] = [$expected, $content];
 
     $expected = [
+      T_NAMESPACE => 'Name\Space',
+      T_USE => ['Alias' => 'Clash\MyClass', 'AliasedSpace' => 'Third\Space', 'Unaliased' => 'Other\Unaliased'],
+      T_CLASS => 'Name\Space\MyClass',
+      T_EXTENDS => ['Clash\MyClass'],
+      T_IMPLEMENTS => ['Third\Space\Alias', 'Other\Unaliased'],
+    ];
+    $content = '<?php
+namespace Name\Space;
+use Clash\MyClass as Alias;
+use Third\Space as AliasedSpace;
+use Other\Unaliased;
+class MyClass extends Alias implements AliasedSpace\Alias, Unaliased {}
+';
+    $cases[] = [$expected, $content];
+
+    $expected = [
       T_NAMESPACE => 'Foo\Bar',
       T_CLASS => 'Foo\Bar\Baz',
     ];
@@ -209,7 +225,7 @@ class Baz {
 
   public function providerResolveName() {
     return [
-      // Base conditions.
+      // Basic namespaced elements.
       ['Name',                 '', 'Name'],
       ['Name',                 '', '\Name'],
       ['Global\Name',          '', 'Global\Name'],
@@ -217,7 +233,7 @@ class Baz {
       ['Some\Space\Name',      'Some', 'Space\Name'],
       ['Some\Space\Name',      'Some\Space', 'Name'],
       ['Some\Space\Some\Name', 'Some\Space', 'Some\Name'],
-      // Base conditions + irrelevant import.
+      // Basic namespaced elements + irrelevant import.
       ['Name',                 '', 'Name', ['Foo' => 'Foo']],
       ['Name',                 '', '\Name', ['Foo' => 'Foo']],
       ['Global\Name',          '', 'Global\Name', ['Foo' => 'Foo']],
@@ -225,14 +241,16 @@ class Baz {
       ['Some\Space\Name',      'Some', 'Space\Name', ['Foo' => 'Foo']],
       ['Some\Space\Name',      'Some\Space', 'Name', ['Foo' => 'Foo']],
       ['Some\Space\Some\Name', 'Some\Space', 'Some\Name', ['Foo' => 'Foo']],
-      // Actual imports.
+      // Imported elements and namespaces.
       ['Name',                 '', 'Name', ['Name' => 'Name']],
       ['Name',                 '', '\Name', ['Name' => 'Name']],
       ['Name',                 '', '\Name', ['Name' => '\Name']],
       ['Imported\Name',        '', 'Name', ['Name' => 'Imported\Name']],
       ['Imported\Name',        'Namespace', 'Name', ['Name' => 'Imported\Name']],
       ['Imported\Space\Name',  'Namespace', 'Space\Name', ['Space' => 'Imported\Space']],
-      // @todo Aliases.
+      // Aliasesed imported elements and namespaces.
+      ['Imported\Name',        'Name\Space', 'Alias', ['Alias' => 'Imported\Name']],
+      ['Imported\Space\Alias', 'Name\Space', 'AliasedSpace\Alias', ['AliasedSpace' => 'Imported\Space']],
     ];
   }
 
