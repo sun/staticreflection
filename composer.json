@@ -2,27 +2,24 @@
     "name": "sun/staticreflection",
     "description": "Static PHP class code reflection for post-discovery scenarios.",
     "license": "MIT",
-    "keywords": ["reflection", "token", "parser", "discovery", "autoload", "phpdoc", "annotation"],
+    "keywords": [ "reflection", "token", "parser", "discovery", "autoload", "docblock", "phpdoc", "annotations" ],
     "authors": [
-        {
-            "name": "Daniel F. Kudwien (sun)",
-            "email": "sun@unleashedmind.com"
-        }
+        { "name": "Daniel F. Kudwien (sun)", "email": "sun@unleashedmind.com" }
     ],
+    "require": {
+        "php": ">=5.4.2"
+    },
+    "require-dev": {
+    },
     "autoload": {
       "psr-4": {
         "Sun\\StaticReflection\\": "src/"
       }
-    },
-    "require": {
-        "php": ">=5.4.2"
     },
     "autoload-dev": {
         "psr-4": {
             "Sun\\StaticReflection\\Tests\\": "tests/src/",
             "Sun\\StaticReflection\\Fixtures\\": "tests/fixtures/"
         }
-    },
-    "require-dev": {
     }
 }
