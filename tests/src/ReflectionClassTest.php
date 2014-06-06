@@ -111,6 +111,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
 
   /**
    * @covers ::reflect
+   * @covers ::readFileHeader
    */
   public function testReflect() {
     $reflector = new ReflectionClass($this->name, $this->path);
