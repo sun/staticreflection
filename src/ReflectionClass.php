@@ -390,6 +390,10 @@ class ReflectionClass extends \ReflectionClass {
 
   /**
    * {@inheritdoc}
+   *
+   * Note: This method returns TRUE even if $class is not an interface; i.e.,
+   * if the input is bogus. Static reflection should not be used if that level
+   * of accuracy is required.
    */
   public function implementsInterface($class) {
     $info = $this->reflect();
@@ -399,20 +403,13 @@ class ReflectionClass extends \ReflectionClass {
     if ($info[T_TRAIT] || (!$info[T_IMPLEMENTS] && !$info[T_EXTENDS])) {
       return FALSE;
     }
-    // Check for a direct match first.
-    // Note: This will return TRUE if $class is a class instead of an interface.
-    // Static reflection should not be used if that level of accuracy is needed.
+    // Check for a static matches first.
     if ($this->isSubclassOfAny(array($class))) {
       return TRUE;
     }
-    // If there is no direct match, inspect each interface.
-    // This causes interfaces and all of their dependencies to get autoloaded.
-    foreach ($info[T_IMPLEMENTS] as $interface) {
-      if ($this->isSubclassOfReal($interface, $class)) {
-        return TRUE;
-      }
-    }
-    return FALSE;
+    // Otherwise, inspect all ancestors. This causes all interfaces and parent
+    // classes, and all of their dependencies to get autoloaded.
+    return $this->isSubclassOfAnyAncestors($info[T_EXTENDS] + $info[T_IMPLEMENTS], $class);
   }
 
   /**
@@ -480,18 +477,9 @@ class ReflectionClass extends \ReflectionClass {
     if ($this->isSubclassOfAny(array($class))) {
       return TRUE;
     }
-    // If there is no direct match, inspect the parents of each parent.
-    // This causes the parent class(es) and all of their dependencies to get
-    // autoloaded.
-    foreach ($info[T_EXTENDS] as $parent) {
-      if ($this->isSubclassOfReal($parent, $class)) {
-        return TRUE;
-      }
-    }
-    if ($info[T_IMPLEMENTS]) {
-      return $this->implementsInterface($class);
-    }
-    return FALSE;
+    // Otherwise, inspect all ancestors. This causes all interfaces and parent
+    // classes, and all of their dependencies to get autoloaded.
+    return $this->isSubclassOfAnyAncestors($info[T_EXTENDS] + $info[T_IMPLEMENTS], $class);
   }
 
   /**
@@ -541,16 +529,19 @@ class ReflectionClass extends \ReflectionClass {
    * from the same ancestors.
    *
    * @see is_subclass_of()
-   *
-   * @todo Rename into something less "real".
    */
-  protected function isSubclassOfReal($ancestor, $class) {
-    if (!isset(self::$ancestorCache[$ancestor])) {
-      self::$ancestorCache[$ancestor] = array();
-      self::$ancestorCache[$ancestor] += class_parents($ancestor) ?: array();
-      self::$ancestorCache[$ancestor] += class_implements($ancestor) ?: array();
+  protected function isSubclassOfAnyAncestors(array $ancestors, $class) {
+    foreach ($ancestors as $ancestor) {
+      if (!isset(self::$ancestorCache[$ancestor])) {
+        self::$ancestorCache[$ancestor] = array();
+        self::$ancestorCache[$ancestor] += class_parents($ancestor) ?: array();
+        self::$ancestorCache[$ancestor] += class_implements($ancestor) ?: array();
+      }
+      if (isset(self::$ancestorCache[$ancestor][$class])) {
+        return TRUE;
+      }
     }
-    return isset(self::$ancestorCache[$ancestor][$class]);
+    return FALSE;
   }
 
   /**

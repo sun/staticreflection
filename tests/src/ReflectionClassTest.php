@@ -552,11 +552,11 @@ EOC
    * @dataProvider providerImplementsInterface
    */
   public function testImplementsInterface($expected, array $info, $ancestor) {
-    $reflector = $this->getClassReflectorMock($info, ['isSubclassOfReal']);
+    $reflector = $this->getClassReflectorMock($info, ['isSubclassOfAnyAncestors']);
 
     $reflector
       ->expects($this->never())
-      ->method('isSubclassOfReal');
+      ->method('isSubclassOfAnyAncestors');
 
     $this->assertSame($expected, $reflector->implementsInterface($ancestor));
   }
@@ -570,9 +570,25 @@ EOC
       [FALSE, [T_INTERFACE => 'FooInterface'], 'CheckedInterface'],
       // Interface self-test.
       [TRUE,  [T_INTERFACE => 'CheckedInterface'], 'CheckedInterface'],
+      // Statically reflected cases.
       [TRUE,  [T_CLASS => 'FooClass', T_IMPLEMENTS => ['FooInterface']], 'FooInterface'],
       [TRUE,  [T_INTERFACE => 'FooInterface', T_EXTENDS => ['OtherInterface']], 'OtherInterface'],
     ];
+  }
+
+  /**
+   * @covers ::implementsInterface
+   * @covers ::isSubclassOfAnyAncestors
+   * @runInSeparateProcess
+   */
+  public function testImplementsInterfaceReturnsFalseIfNotImplemented() {
+    $reflector = $this->getClassReflectorMock(array(
+      T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
+      T_CLASS => 'Sun\Tests\StaticReflection\Fixtures\Example',
+      T_IMPLEMENTS => ['Sun\Tests\StaticReflection\Fixtures\Example1Interface'],
+    ));
+
+    $this->assertSame(FALSE, $reflector->implementsInterface('NotImplemented'));
   }
 
   /**
@@ -671,11 +687,11 @@ EOC
    * @dataProvider providerIsSubclassOfStatic
    */
   public function testIsSubclassOf($expected, $ancestor) {
-    $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', ['isSubclassOfReal'], [$this->name, $this->path]);
+    $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', ['isSubclassOfAnyAncestors'], [$this->name, $this->path]);
 
     $reflector
       ->expects($this->never())
-      ->method('isSubclassOfReal');
+      ->method('isSubclassOfAnyAncestors');
 
     $this->assertSame($expected, $reflector->isSubclassOf($ancestor));
   }
@@ -696,14 +712,14 @@ EOC
    * @dataProvider providerIsSubclassOfFalseConditions
    */
   public function testIsSubclassOfSelfOrNothing($info, $ancestor) {
-    $reflector = $this->getClassReflectorMock($info, ['isSubclassOfAny', 'isSubclassOfReal', 'implementsInterface']);
+    $reflector = $this->getClassReflectorMock($info, ['isSubclassOfAny', 'isSubclassOfAnyAncestors', 'implementsInterface']);
 
     $reflector
       ->expects($this->never())
       ->method('isSubclassOfAny');
     $reflector
       ->expects($this->never())
-      ->method('isSubclassOfReal');
+      ->method('isSubclassOfAnyAncestors');
     $reflector
       ->expects($this->never())
       ->method('implementsInterface');
@@ -728,11 +744,11 @@ EOC
     $reflector = $this->getClassReflectorMock(array(
       T_EXTENDS => $parents,
       T_IMPLEMENTS => $interfaces,
-    ), ['isSubclassOfReal']);
+    ), ['isSubclassOfAnyAncestors']);
 
     $reflector
       ->expects($this->never())
-      ->method('isSubclassOfReal');
+      ->method('isSubclassOfAnyAncestors');
 
     $this->assertSame($expected, $reflector->isSubclassOfAny($candidates));
   }
@@ -754,25 +770,25 @@ EOC
 
   /**
    * @covers ::isSubclassOf
-   * @covers ::isSubclassOfReal
+   * @covers ::isSubclassOfAnyAncestors
    * @dataProvider providerIsSubclassOfStatic
    */
-  public function testIsSubclassOfRealIsNotCalledOnStaticMatch($expected, $ancestor) {
-    $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', ['isSubclassOfReal'], [$this->name, $this->path]);
+  public function testIsSubclassOfAnyAncestorsIsNotCalledOnStaticMatch($expected, $ancestor) {
+    $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', ['isSubclassOfAnyAncestors'], [$this->name, $this->path]);
 
     $reflector
       ->expects($this->never())
-      ->method('isSubclassOfReal');
+      ->method('isSubclassOfAnyAncestors');
 
     $this->assertSame($expected, $reflector->isSubclassOf($ancestor));
   }
 
   /**
    * @covers ::isSubclassOf
-   * @covers ::isSubclassOfReal
+   * @covers ::isSubclassOfAnyAncestors
    * @runInSeparateProcess
    */
-  public function testIsSubclassOfRealLoadsParentOfParentClass() {
+  public function testIsSubclassOfAnyAncestorsLoadsParentOfParentClass() {
     $parent        = 'Sun\Tests\StaticReflection\Fixtures\Base\Example';
     $parent_parent = 'Sun\Tests\StaticReflection\Fixtures\Base\Root';
     $this->assertFalse(class_exists($parent, FALSE));
@@ -797,10 +813,10 @@ EOC
   /**
    * @covers ::isSubclassOf
    * @covers ::implementsInterface
-   * @covers ::isSubclassOfReal
+   * @covers ::isSubclassOfAnyAncestors
    * @runInSeparateProcess
    */
-  public function testIsSubclassOfRealLoadsInterfaceOfInterface() {
+  public function testIsSubclassOfAnyAncestorsLoadsInterfaceOfInterface() {
     $parent        = 'Sun\Tests\StaticReflection\Fixtures\Example1Interface';
     $parent_parent = 'Sun\Tests\StaticReflection\Fixtures\Base\InvisibleInterface';
     $this->assertFalse(interface_exists($parent, FALSE));
@@ -809,7 +825,7 @@ EOC
     $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', ['reflect'], [$this->name, $this->path]);
 
     $reflector
-      ->expects($this->exactly(4))
+      ->expects($this->exactly(2))
       ->method('reflect')
       ->will($this->returnValue(array(
         T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
@@ -821,6 +837,21 @@ EOC
 
     $this->assertTrue(interface_exists($parent, FALSE));
     $this->assertTrue(interface_exists($parent_parent, FALSE));
+  }
+
+  /**
+   * @covers ::isSubclassOf
+   * @covers ::isSubclassOfAnyAncestors
+   * @runInSeparateProcess
+   */
+  public function testIsSubclassOfAnyAncestorsReturnsFalseIfNotContained() {
+    $reflector = $this->getClassReflectorMock(array(
+      T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
+      T_CLASS => 'Sun\Tests\StaticReflection\Fixtures\Example',
+      T_EXTENDS => ['Sun\Tests\StaticReflection\Fixtures\Base\Example'],
+    ));
+
+    $this->assertSame(FALSE, $reflector->isSubclassOf('NotImplemented'));
   }
 
   /**
