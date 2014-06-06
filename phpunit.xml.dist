@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<!--
+  // Enables checkForUnintentionallyCoveredCode, which is barely documented
+  // at this point.
+  // @see http://talks.thephp.cc/assets/2014-international-php-conference-spring-edition-code-coverage-covered-in-depth.pdf
+  // @see http://www.jitsc.co.uk/blog/programming/phpunit-risky-tests/
+  strict="true"
+-->
 <phpunit
   bootstrap="./vendor/autoload.php"
+  beStrictAboutTestsThatDoNotTestAnything="true"
+  beStrictAboutOutputDuringTests="true"
+  beStrictAboutTestSize="true"
+  checkForUnintentionallyCoveredCode="false"
   forceCoversAnnotation="true"
-  strict="true"
   colors="true"
 >
 
