@@ -415,6 +415,86 @@ EOC
   }
 
   /**
+   * @covers ::parseAnnotations
+   * @dataProvider providerParseAnnotations
+   */
+  public function testParseAnnotations($expected, $docblock) {
+    $method = new \ReflectionMethod('Sun\StaticReflection\ReflectionClass', 'parseAnnotations');
+    $method->setAccessible(TRUE);
+    $this->assertSame($expected, $method->invoke(NULL, $docblock));
+  }
+
+  public function providerParseAnnotations() {
+    return [
+      [[], <<<EOC
+/**
+ */
+EOC
+],
+      [[], <<<EOC
+/**
+ * None.
+ */
+EOC
+],
+      [[], <<<EOC
+/**
+ * Summary containing a @tag.
+ */
+EOC
+],
+      [['tag' => ['']], <<<EOC
+/**
+ * One.
+ * @tag
+ */
+EOC
+],
+      [['param' => ['string']], <<<EOC
+/**
+ * @param string
+ */
+EOC
+],
+      [['param' => ['spaced string']], <<<EOC
+/**
+ * @param spaced string
+ */
+EOC
+],
+      [['param' => ['string']], <<<EOC
+/**
+ * @param string
+ *   Description.
+ */
+EOC
+],
+      [['param' => ['string', 'second'], 'group' => ['Foo']], <<<EOC
+/**
+ * @param string
+ *   Description.
+ * @param second
+ * @group Foo
+ */
+EOC
+],
+      [['param' => ['string']], <<<EOC
+/**
+ * Alternate doc comment end style.
+ * @param string
+**/
+EOC
+],
+      [['Squashed' => ['tag']], <<<EOC
+/**
+ *@Squashed tag
+ */
+EOC
+],
+    ];
+  }
+
+  /**
    * @covers ::getFileName
    */
   public function testGetFileName() {
