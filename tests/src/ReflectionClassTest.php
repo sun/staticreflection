@@ -134,6 +134,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   public function providerTokenize() {
     $cases = array();
 
+    // Namespace.
     $expected = [
       T_NAMESPACE => 'Foo\Bar',
       T_CLASS => 'Foo\Bar\Baz',
@@ -146,6 +147,21 @@ class Baz {
 ';
     $cases[] = [$expected, $content];
 
+    // Scoped namespace.
+    $expected = [
+      T_NAMESPACE => 'Foo\Bar',
+      T_CLASS => 'Foo\Bar\Baz',
+    ];
+    $content = '<?php
+namespace Foo\Bar {
+
+class Baz {
+}
+}
+';
+    $cases[] = [$expected, $content];
+
+    // PSR-2 coding style.
     $expected = [
       T_NAMESPACE => 'Psr',
       T_CLASS => 'Psr\Two',
@@ -159,24 +175,7 @@ class Two
 ';
     $cases[] = [$expected, $content];
 
-    $expected = [
-      T_NAMESPACE => 'White',
-      T_USE => ['Grey' => 'Black\Grey'],
-      T_CLASS => 'White\Space',
-      T_EXTENDS => ['Black\Grey'],
-      T_IMPLEMENTS => ['White\Dust'],
-    ];
-    $content = '<?php
-namespace White;
-use Black\Grey;
-class Space
-  extends Grey
-  implements Dust
-{
-}
-';
-    $cases[] = [$expected, $content];
-
+    // Use/As (namespace imports).
     $expected = [
       T_NAMESPACE => 'Name\Space',
       T_USE => ['Alias' => 'Clash\MyClass', 'AliasedSpace' => 'Third\Space', 'Unaliased' => 'Other\Unaliased'],
@@ -193,15 +192,70 @@ class MyClass extends Alias implements AliasedSpace\Alias, Unaliased {}
 ';
     $cases[] = [$expected, $content];
 
+    // Doc comment block.
     $expected = [
-      T_NAMESPACE => 'Foo\Bar',
-      T_CLASS => 'Foo\Bar\Baz',
+      T_DOC_COMMENT => '/**
+ * The name.
+ */',
+      T_NAMESPACE => 'Space',
+      T_CLASS => 'Space\Name',
     ];
     $content = '<?php
-namespace Foo\Bar {
+namespace Space;
+/**
+ * The name.
+ */
+class Name {}
+';
+    $cases[] = [$expected, $content];
 
-class Baz {
-}
+    // NOT a doc comment block.
+    $expected = [
+      T_NAMESPACE => 'Space',
+      T_CLASS => 'Space\Name',
+    ];
+    $content = '<?php
+namespace Space;
+/*
+ * The name.
+ */
+class Name {}
+';
+    $cases[] = [$expected, $content];
+
+    // Abstract.
+    $expected = [
+      T_ABSTRACT => TRUE,
+      T_CLASS => 'Name',
+    ];
+    $content = '<?php
+abstract class Name {}
+';
+    $cases[] = [$expected, $content];
+
+    // Final.
+    $expected = [
+      T_FINAL => TRUE,
+      T_CLASS => 'Name',
+    ];
+    $content = '<?php
+final class Name {}
+';
+    $cases[] = [$expected, $content];
+
+    // Extends / Implements.
+    $expected = [
+      T_NAMESPACE => 'White',
+      T_CLASS => 'White\Space',
+      T_EXTENDS => ['White\Grey'],
+      T_IMPLEMENTS => ['White\Dust'],
+    ];
+    $content = '<?php
+namespace White;
+class Space
+  extends Grey
+  implements Dust
+{
 }
 ';
     $cases[] = [$expected, $content];

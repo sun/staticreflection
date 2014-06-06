@@ -185,9 +185,6 @@ class ReflectionClass extends \ReflectionClass {
           }
           unset($context, $context_id);
         }
-        else {
-          $context .= $token;
-        }
       }
     }
 
