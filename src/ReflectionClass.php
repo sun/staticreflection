@@ -393,17 +393,23 @@ class ReflectionClass extends \ReflectionClass {
    */
   public function implementsInterface($class) {
     $info = $this->reflect();
+    if ($class === $info[T_INTERFACE]) {
+      return TRUE;
+    }
+    if ($info[T_TRAIT] || (!$info[T_IMPLEMENTS] && !$info[T_EXTENDS])) {
+      return FALSE;
+    }
     // Check for a direct match first.
-    if ($info[T_IMPLEMENTS]) {
-      if (in_array($class, $info[T_IMPLEMENTS], TRUE)) {
+    // Note: This will return TRUE if $class is a class instead of an interface.
+    // Static reflection should not be used if that level of accuracy is needed.
+    if ($this->isSubclassOfAny(array($class))) {
+      return TRUE;
+    }
+    // If there is no direct match, inspect each interface.
+    // This causes interfaces and all of their dependencies to get autoloaded.
+    foreach ($info[T_IMPLEMENTS] as $interface) {
+      if ($this->isSubclassOfReal($interface, $class)) {
         return TRUE;
-      }
-      // If there is no direct match, inspect each interface.
-      // This causes interfaces and dependent classes to get autoloaded.
-      foreach ($info[T_IMPLEMENTS] as $interface) {
-        if ($this->isSubclassOfReal($interface, $class)) {
-          return TRUE;
-        }
       }
     }
     return FALSE;
@@ -464,28 +470,28 @@ class ReflectionClass extends \ReflectionClass {
    */
   public function isSubclassOf($class) {
     $info = $this->reflect();
-    // Check for a direct match first.
-    if ($info[T_EXTENDS]) {
-      if (in_array($class, $info[T_EXTENDS], TRUE)) {
-        return TRUE;
-      }
+    if (!$info[T_EXTENDS] && !$info[T_IMPLEMENTS]) {
+      return FALSE;
     }
-    // Same as implementsInterface(), inlined to avoid autoloading on match.
-    if ($info[T_IMPLEMENTS]) {
-      if (in_array($class, $info[T_IMPLEMENTS], TRUE)) {
-        return TRUE;
-      }
+    if ($class === $info[T_CLASS] || $class === $info[T_INTERFACE] || $class === $info[T_TRAIT]) {
+      return FALSE;
+    }
+    // Check for a direct match first.
+    if ($this->isSubclassOfAny(array($class))) {
+      return TRUE;
     }
     // If there is no direct match, inspect the parents of each parent.
-    if ($info[T_EXTENDS]) {
-      // This causes parent classes to be autoloaded.
-      foreach ($info[T_EXTENDS] as $parent) {
-        if ($this->isSubclassOfReal($parent, $class)) {
-          return TRUE;
-        }
+    // This causes the parent class(es) and all of their dependencies to get
+    // autoloaded.
+    foreach ($info[T_EXTENDS] as $parent) {
+      if ($this->isSubclassOfReal($parent, $class)) {
+        return TRUE;
       }
     }
-    return $this->implementsInterface($class);
+    if ($info[T_IMPLEMENTS]) {
+      return $this->implementsInterface($class);
+    }
+    return FALSE;
   }
 
   /**
@@ -514,15 +520,11 @@ class ReflectionClass extends \ReflectionClass {
    */
   public function isSubclassOfAny(array $classes) {
     $info = $this->reflect();
-    if ($info[T_EXTENDS]) {
-      if (array_intersect($info[T_EXTENDS], $classes)) {
-        return TRUE;
-      }
+    if ($info[T_EXTENDS] && array_intersect($info[T_EXTENDS], $classes)) {
+      return TRUE;
     }
-    if ($info[T_IMPLEMENTS]) {
-      if (array_intersect($info[T_IMPLEMENTS], $classes)) {
-        return TRUE;
-      }
+    if ($info[T_IMPLEMENTS] && array_intersect($info[T_IMPLEMENTS], $classes)) {
+      return TRUE;
     }
     return FALSE;
   }
@@ -542,7 +544,7 @@ class ReflectionClass extends \ReflectionClass {
    *
    * @todo Rename into something less "real".
    */
-  private function isSubclassOfReal($ancestor, $class) {
+  protected function isSubclassOfReal($ancestor, $class) {
     if (!isset(self::$ancestorCache[$ancestor])) {
       self::$ancestorCache[$ancestor] = array();
       self::$ancestorCache[$ancestor] += class_parents($ancestor) ?: array();
