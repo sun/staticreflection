@@ -218,6 +218,22 @@ if (!$class->isSubclassOf('Condition\Absolute\Root')) {
     _(…just in case that even counts as an issue today)_
 
 
+## Inspirations
+
+Static/Reflection:
+
+* Doctrine's (Static) [Reflection](https://github.com/doctrine/common/tree/master/lib/Doctrine/Common/Reflection)
+* Zend Framework's [Reflection](https://github.com/zendframework/zf2/tree/master/library/Zend/Server/Reflection)
+
+PHPDoc tags/annotations parsing:
+
+* PHPUnit's [Util\Test](https://github.com/sebastianbergmann/phpunit/blob/master/src/Util/Test.php)
+* Doctrine's [Annotations](https://github.com/doctrine/annotations/tree/master/lib/Doctrine/Common/Annotations)
+* phpDocumentor's [Descriptor](https://github.com/phpDocumentor/phpDocumentor2/tree/develop/src/phpDocumentor/Descriptor)
+* Shira's [DocComment](https://github.com/ShiraNai7/php-doc-comment)
+* Philip Graham's [Annotations](https://github.com/pgraham/php-annotations)
+
+
 ## License
 
 [MIT](LICENSE) — Copyright (c) 2014 Daniel F. Kudwien (sun)
