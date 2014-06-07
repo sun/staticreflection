@@ -30,6 +30,19 @@ or swappable/configurable plugin implementations).
 
 `ReflectionClass` provides the same API as the native `\ReflectionClass`.
 
+Example [xhprof](http://php.net/manual/en/book.xhprof.php) diff results:
+
+1,538 candidate classes, of which 180 are filtered out (since abstract, traits,
+interfaces, or other helper classes):
+
+|       | \ReflectionClass | ReflectionClass | Diff | Diff% |
+| ----- | ----------------:| ---------------:| ----:| -----:|
+| Number of Function Calls | 64,747 | 202,783 | 138,036 | 213.2%
+| Incl. Wall Time (microsec) | 2,514,801 | 3,272,539 |757,738 | 30.1%
+| Incl. CPU (microsecs) | 2,480,415 | 3,120,020 | 639,605 | 25.8%
+| Incl. MemUse (bytes) | 108,805,120 | 10,226,160 | -98,578,960 | -90.6%
+| Incl. PeakMemUse (bytes) | 108,927,216 | 10,347,608 | -98,579,608 | **-90.5%**
+
 
 ## Usage Example
 
