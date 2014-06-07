@@ -10,6 +10,8 @@ namespace Sun\Tests\StaticReflection;
 use Sun\StaticReflection\ReflectionClass;
 
 /**
+ * Tests ReflectionClass.
+ *
  * @coversDefaultClass \Sun\StaticReflection\ReflectionClass
  */
 class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
