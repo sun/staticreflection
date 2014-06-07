@@ -16,17 +16,17 @@ every dependency of every class and interface. — Static reflection avoids to
 memory.
 
 High memory consumption can be a problem, because PHP's default memory limit is
-very small.  Even if it was increased, loading hundreds or even thousands of
-classes may easily exceed a custom limit, too.
+very small.  Even if it was increased, just loading hundreds or even thousands
+of classes may easily exceed a custom limit, too.
 
-If you need to reflect 1,000+ classes (e.g., tests), then, on average, 3x times
-more PHP files are loaded into memory, which can result in a peak memory
-consumption of 120+ MB by the total loaded code only — even though you only care
-for the filtered 1k.
+When reflecting 1,000+ classes (e.g., tests), then, on average, 3x times more
+PHP files are loaded into memory, which can result in a peak memory consumption
+of 120+ MB by the total loaded code only — even though you only care for the
+filtered 1k.
 
 In the worst/ideal case, you're just trying to generate a _list_ of
-available/discovered classes, without using them immediately (e.g., for a UI/CLI
-selection or swappable/configurable plugin implementations).
+available classes, without using them immediately (e.g., for a UI/CLI selection
+or swappable/configurable plugin implementations).
 
 `ReflectionClass` provides the same API as the native `\ReflectionClass`.
 
@@ -168,14 +168,14 @@ selection or swappable/configurable plugin implementations).
 
 
 _Pro-Tip:_ To filter for a unique parent/root class/interface, use
-`ReflectionClass::isSubclassOfAny()` to check for the most common + expected
-parent classes first and only compare against the statically reflected
-information.  Only proceed to `isSubclassOf()` in case you want/need to check
+`ReflectionClass::isSubclassOfAny()` to check for the most common/expected
+parent classes and only compare against the statically reflected information
+first.  Only proceed to `isSubclassOf()` in case you want/need to check
 further; e.g.:
 
 ```php
 // Static reflection.
-if (!$class->isSubclassOfAny(['Condition\Flavor1', 'Condition\Flavor1'])) {
+if (!$class->isSubclassOfAny(['Condition\CommonFlavor', 'Condition\AltFlavor'])) {
   continue;
 }
 // Native reflection of ancestors (if the reflected class has any).
