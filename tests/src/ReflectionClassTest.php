@@ -703,6 +703,27 @@ EOC
   }
 
   /**
+   * @covers ::isIterateable
+   * @dataProvider providerIsIterateable
+   */
+  public function testIsIterateable($expected, array $info) {
+    $reflector = $this->getClassReflectorMock($info);
+    $this->assertSame($expected, $reflector->isIterateable());
+  }
+
+  public function providerIsIterateable() {
+    return [
+      [FALSE, []],
+      [FALSE, [T_IMPLEMENTS => ['FooInterface']]],
+      [FALSE, [T_IMPLEMENTS => ['IteratorInterface']]],
+      [TRUE,  [T_IMPLEMENTS => ['Traversable']]],
+      [TRUE,  [T_IMPLEMENTS => ['IteratorAggregate']]],
+      [TRUE,  [T_IMPLEMENTS => ['Iterator']]],
+      [TRUE,  [T_IMPLEMENTS => ['ArrayIterator']]],
+    ];
+  }
+
+  /**
    * @covers ::isSubclassOf
    * @dataProvider providerIsSubclassOfStatic
    */

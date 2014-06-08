@@ -453,10 +453,11 @@ class ReflectionClass extends \ReflectionClass {
 
   /**
    * {@inheritdoc}
-   *
-   * @todo Implement.
    */
-  //public function isIterateable() {
+  public function isIterateable() {
+    $info = $this->reflect();
+    return array_intersect($info[T_IMPLEMENTS], array('Iterator', 'IteratorAggregate', 'Traversable')) || preg_grep('/Iterator$/', $info[T_IMPLEMENTS]);
+  }
 
   /**
    * {@inheritdoc}
