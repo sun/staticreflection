@@ -351,10 +351,17 @@ class ReflectionClass extends \ReflectionClass {
 
   /**
    * {@inheritdoc}
-   *
-   * @todo Implement.
    */
-  //public function getModifiers() {
+  public function getModifiers() {
+    $flags = 0;
+    if ($this->isAbstract()) {
+      $flags |= \ReflectionClass::IS_EXPLICIT_ABSTRACT;
+    }
+    if ($this->isFinal()) {
+      $flags |= \ReflectionClass::IS_FINAL;
+    }
+    return $flags;
+  }
 
   /**
    * {@inheritdoc}

@@ -526,6 +526,24 @@ EOC
   }
 
   /**
+   * @covers ::getModifiers
+   * @dataProvider providerGetModifiers
+   */
+  public function testGetModifiers($expected, array $info) {
+    $reflector = $this->getClassReflectorMock($info);
+    $this->assertSame($expected, $reflector->getModifiers());
+  }
+
+  public function providerGetModifiers() {
+    return [
+      [0, []],
+      [\ReflectionClass::IS_EXPLICIT_ABSTRACT, [T_ABSTRACT => TRUE]],
+      [\ReflectionClass::IS_FINAL, [T_FINAL => TRUE]],
+      [\ReflectionClass::IS_EXPLICIT_ABSTRACT | \ReflectionClass::IS_FINAL, [T_ABSTRACT => TRUE, T_FINAL => TRUE]],
+    ];
+  }
+
+  /**
    * @covers ::getName
    */
   public function testGetName() {
