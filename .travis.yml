@@ -7,7 +7,7 @@ php:
 
 before_script:
   - composer self-update
-  - composer --prefer-source install
+  - composer install --prefer-source
   - composer require -n satooshi/php-coveralls:dev-master
 
 script:
