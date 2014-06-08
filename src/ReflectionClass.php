@@ -162,49 +162,39 @@ class ReflectionClass extends \ReflectionClass {
           }
         }
         // Not a result context; append content to last result context.
-        elseif (isset($context_id)) {
-          if ($id !== T_WHITESPACE && $id !== T_COMMENT) {
-            $context .= $token[1];
-          }
+        elseif (isset($context_id) && $id !== T_WHITESPACE && $id !== T_COMMENT) {
+          $context .= $token[1];
         }
       }
       // Append simple strings to last result context.
       elseif (isset($context_id)) {
-        // Create a new sub-element for T_IMPLEMENTS + T_EXTENDS (interfaces).
+        // Create a new sub-element for T_IMPLEMENTS, T_EXTENDS, T_USE.
         if ($token === ',') {
           $context = &$result[$context_id][];
           $context = '';
         }
-        // Force-terminate last result context upon PHP statement delimiters.
+        // Terminate last result context upon PHP statement delimiters.
         elseif ($token === ';' || $token === '{') {
-          // When terminating 'as', inject the alias into last 'use' statement.
+          // When terminating 'use' or 'as', inject the local alias as key.
           if ($context_id === T_AS) {
             $import = array_pop($result[T_USE]);
             $result[T_USE][$context] = $import;
             $context = '';
           }
+          elseif ($context_id === T_USE) {
+            $import = array_pop($result[T_USE]);
+            $result[T_USE][self::basename($import)] = $import;
+          }
           unset($context, $context_id);
         }
       }
     }
+    unset($result[T_AS]);
 
     // The last doc comment belongs to the class.
     $result[T_DOC_COMMENT] = end($result[T_DOC_COMMENT]) ?: '';
 
-    // Prepare import aliases.
-    $imports = array();
-    foreach ($result[T_USE] as $key => $fqcn) {
-      if (is_int($key)) {
-        $imports[self::basename($fqcn)] = $fqcn;
-      }
-      else {
-        $imports[$key] = $fqcn;
-      }
-    }
-    $result[T_USE] = $imports;
-    unset($result[T_AS]);
-
-    // Resolve class, parent class and interface names.
+    // Resolve class, parent class, interface, and ancestor names.
     foreach (array(T_CLASS, T_INTERFACE, T_TRAIT) as $id) {
       if ($result[$id] !== '') {
         $result[$id] = self::resolveName($result[T_NAMESPACE], $result[$id]);
@@ -213,11 +203,10 @@ class ReflectionClass extends \ReflectionClass {
         $result[$id] = FALSE;
       }
     }
-    foreach ($result[T_EXTENDS] as &$ancestor) {
-      $ancestor = self::resolveName($result[T_NAMESPACE], $ancestor, $result[T_USE]);
-    }
-    foreach ($result[T_IMPLEMENTS] as &$interface) {
-      $interface = self::resolveName($result[T_NAMESPACE], $interface, $result[T_USE]);
+    foreach (array(T_EXTENDS, T_IMPLEMENTS) as $id) {
+      foreach ($result[$id] as &$ancestor) {
+        $ancestor = self::resolveName($result[T_NAMESPACE], $ancestor, $result[T_USE]);
+      }
     }
 
     return $result;
@@ -237,7 +226,7 @@ class ReflectionClass extends \ReflectionClass {
    * @return string
    *   $name resolved against $namespace and $imports.
    */
-  private static function resolveName($namespace, $name, $imports = array()) {
+  private static function resolveName($namespace, $name, array $imports = array()) {
     // Strip namespace prefix, if any.
     if ($name[0] === '\\') {
       return substr($name, 1);
@@ -511,10 +500,7 @@ class ReflectionClass extends \ReflectionClass {
     if ($info[T_EXTENDS] && array_intersect($info[T_EXTENDS], $classes)) {
       return TRUE;
     }
-    if ($info[T_IMPLEMENTS] && array_intersect($info[T_IMPLEMENTS], $classes)) {
-      return TRUE;
-    }
-    return FALSE;
+    return $info[T_IMPLEMENTS] && array_intersect($info[T_IMPLEMENTS], $classes);
   }
 
   /**
