@@ -1,4 +1,4 @@
-# StaticReflection [![Build Status](https://travis-ci.org/sun/staticreflection.svg)](https://travis-ci.org/sun/staticreflection) [![Coverage Status](https://img.shields.io/coveralls/sun/staticreflection.svg)](https://coveralls.io/r/sun/staticreflection)
+# StaticReflection [![Build Status](https://travis-ci.org/sun/staticreflection.svg)](https://travis-ci.org/sun/staticreflection) [![Code Coverage](https://scrutinizer-ci.com/g/sun/staticreflection/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/sun/staticreflection/?branch=master) [![Code Quality](https://scrutinizer-ci.com/g/sun/staticreflection/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/sun/staticreflection/?branch=master)
 _Static PHP class code reflection for post-discovery scenarios._
 
 This utility library for PHP frameworks/applications allows to reflect PHP class
