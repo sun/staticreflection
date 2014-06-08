@@ -7,14 +7,16 @@
         { "name": "Daniel F. Kudwien (sun)", "email": "sun@unleashedmind.com" }
     ],
     "require": {
-        "php": ">=5.4.2"
+        "php": ">=5.4.2",
+        "ext-tokenizer": "*",
+        "ext-Reflection": "*"
     },
     "require-dev": {
     },
     "autoload": {
-      "psr-4": {
-        "Sun\\StaticReflection\\": "src/"
-      }
+        "psr-4": {
+            "Sun\\StaticReflection\\": "src/"
+        }
     },
     "autoload-dev": {
         "psr-4": {
