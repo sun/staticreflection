@@ -20,6 +20,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   private $path;
 
   private $info = array(
+    'fqcn' => 'Sun\Tests\StaticReflection\Fixtures\Example',
     T_DOC_COMMENT => '/**
  * PHPDoc summary line.
  * Summary may wrap.
@@ -57,6 +58,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   );
 
   private $defaults = array(
+    'fqcn' => '',
     T_DOC_COMMENT => '',
     T_NAMESPACE => '',
     T_USE => array(),
@@ -96,6 +98,19 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   private function getClassReflectorMock(array $return = array(), array $methods = array()) {
     $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', array('reflect') + $methods, array($this->name, $this->path));
 
+    // Unless explicitly specified, automatically populate the FQCN.
+    if (!isset($return['fqcn'])) {
+      $return['fqcn'] = '';
+      if (isset($return[T_NAMESPACE])) {
+        $return['fqcn'] = $return[T_NAMESPACE] . '\\';
+      }
+      foreach (array(T_CLASS, T_INTERFACE, T_TRAIT) as $key) {
+        if (isset($return[$key])) {
+          $return['fqcn'] .= $return[$key];
+          break;
+        }
+      }
+    }
     $reflector
       ->expects($this->any())
       ->method('reflect')
@@ -165,6 +180,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
 
     // Namespace.
     $expected = [
+      'fqcn' => 'Foo\Bar\Baz',
       T_NAMESPACE => 'Foo\Bar',
       T_CLASS => 'Foo\Bar\Baz',
     ];
@@ -178,6 +194,7 @@ class Baz {
 
     // Scoped namespace.
     $expected = [
+      'fqcn' => 'Foo\Bar\Baz',
       T_NAMESPACE => 'Foo\Bar',
       T_CLASS => 'Foo\Bar\Baz',
     ];
@@ -192,6 +209,7 @@ class Baz {
 
     // PSR-2 coding style.
     $expected = [
+      'fqcn' => 'Psr\Two',
       T_NAMESPACE => 'Psr',
       T_CLASS => 'Psr\Two',
     ];
@@ -206,6 +224,7 @@ class Two
 
     // Use/As (namespace imports).
     $expected = [
+      'fqcn' => 'Name\Space\MyClass',
       T_NAMESPACE => 'Name\Space',
       T_USE => ['Alias' => 'Clash\MyClass', 'AliasedSpace' => 'Third\Space', 'Unaliased' => 'Other\Unaliased'],
       T_CLASS => 'Name\Space\MyClass',
@@ -223,6 +242,7 @@ class MyClass extends Alias implements AliasedSpace\Alias, Unaliased {}
 
     // Doc comment block.
     $expected = [
+      'fqcn' => 'Space\Name',
       T_DOC_COMMENT => '/**
  * The name.
  */',
@@ -240,6 +260,7 @@ class Name {}
 
     // NOT a doc comment block.
     $expected = [
+      'fqcn' => 'Space\Name',
       T_NAMESPACE => 'Space',
       T_CLASS => 'Space\Name',
     ];
@@ -254,6 +275,7 @@ class Name {}
 
     // Abstract.
     $expected = [
+      'fqcn' => 'Name',
       T_ABSTRACT => TRUE,
       T_CLASS => 'Name',
     ];
@@ -264,6 +286,7 @@ abstract class Name {}
 
     // Final.
     $expected = [
+      'fqcn' => 'Name',
       T_FINAL => TRUE,
       T_CLASS => 'Name',
     ];
@@ -274,6 +297,7 @@ final class Name {}
 
     // Extends / Implements.
     $expected = [
+      'fqcn' => 'White\Space',
       T_NAMESPACE => 'White',
       T_CLASS => 'White\Space',
       T_EXTENDS => ['White\Grey'],

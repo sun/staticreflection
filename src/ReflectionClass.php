@@ -62,17 +62,12 @@ class ReflectionClass extends \ReflectionClass {
       $content = $this->readFileHeader();
       $this->info = self::tokenize($content);
 
-      foreach (array(T_CLASS, T_INTERFACE, T_TRAIT) as $key) {
-        if ($this->info[$key] !== FALSE) {
-          if ($this->info[$key] !== $this->classname) {
-            throw new \ReflectionException(vsprintf('Expected %s but found %s in %s.', array(
-              $this->classname,
-              $this->info[$key],
-              $this->pathname,
-            )));
-          }
-          break;
-        }
+      if ($this->info['fqcn'] !== $this->classname) {
+        throw new \ReflectionException(vsprintf('Expected %s but found %s in %s.', array(
+          $this->classname,
+          $this->info['fqcn'],
+          $this->pathname,
+        )));
       }
     }
     return $this->info;
@@ -112,6 +107,7 @@ class ReflectionClass extends \ReflectionClass {
    * @return array
    *   An associative array containing the parsed results, keyed by PHP
    *   Tokenizer tokens:
+   *   - fqcn: The FQCN of the parsed element.
    *   - T_NAMESPACE: The namespace (if any).
    *   - One of T_CLASS, T_INTERFACE, T_TRAIT: The FQCN of the parsed element
    *     (the other two will be FALSE).
@@ -129,6 +125,7 @@ class ReflectionClass extends \ReflectionClass {
     $tokens = token_get_all($content);
 
     $result = array(
+      'fqcn' => '',
       T_DOC_COMMENT => array(),
       T_NAMESPACE => '',
       T_USE => array(),
@@ -209,6 +206,7 @@ class ReflectionClass extends \ReflectionClass {
     foreach (array(T_CLASS, T_INTERFACE, T_TRAIT) as $id) {
       if ($result[$id] !== '') {
         $result[$id] = self::resolveName($result[T_NAMESPACE], $result[$id]);
+        $result['fqcn'] = $result[$id];
       }
       else {
         $result[$id] = FALSE;
@@ -404,7 +402,7 @@ class ReflectionClass extends \ReflectionClass {
    */
   public function implementsInterface($class) {
     $info = $this->reflect();
-    if ($class === $info[T_INTERFACE]) {
+    if ($class === $info['fqcn']) {
       return TRUE;
     }
     if ($info[T_TRAIT] || (!$info[T_IMPLEMENTS] && !$info[T_EXTENDS])) {
@@ -481,7 +479,7 @@ class ReflectionClass extends \ReflectionClass {
     if (!$info[T_EXTENDS] && !$info[T_IMPLEMENTS]) {
       return FALSE;
     }
-    if ($class === $info[T_CLASS] || $class === $info[T_INTERFACE] || $class === $info[T_TRAIT]) {
+    if ($class === $info['fqcn']) {
       return FALSE;
     }
     // Check for a direct match first.
