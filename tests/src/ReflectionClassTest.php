@@ -32,7 +32,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
  *
  * Description #2.
  *
- * @see Example1Interface
+ * @see ExampleInterface
  */',
     T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
     T_USE => array(
@@ -49,8 +49,8 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
       'Sun\Tests\StaticReflection\Fixtures\Base\Example',
     ),
     T_IMPLEMENTS => array(
-      'Sun\Tests\StaticReflection\Fixtures\Example1Interface',
-      'Sun\Tests\StaticReflection\Fixtures\Base\Example2Interface',
+      'Sun\Tests\StaticReflection\Fixtures\ExampleInterface',
+      'Sun\Tests\StaticReflection\Fixtures\Base\NotImportedInterface',
       'Sun\Tests\StaticReflection\Fixtures\Base\ImportedInterface',
       'Countable',
     ),
@@ -331,7 +331,7 @@ class Space
       'tag' => array(''),
       'single' => array('parameter'),
       'multiple' => array('type $param'),
-      'see' => array('Example1Interface'),
+      'see' => array('ExampleInterface'),
     ), $reflector->parseDocComment());
   }
 
@@ -605,7 +605,7 @@ EOC
     $reflector = $this->getClassReflectorMock(array(
       T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
       T_CLASS => 'Sun\Tests\StaticReflection\Fixtures\Example',
-      T_IMPLEMENTS => ['Sun\Tests\StaticReflection\Fixtures\Example1Interface'],
+      T_IMPLEMENTS => ['Sun\Tests\StaticReflection\Fixtures\ExampleInterface'],
     ));
 
     $this->assertSame(FALSE, $reflector->implementsInterface('NotImplemented'));
@@ -621,10 +621,10 @@ EOC
       T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
       T_CLASS => 'Sun\Tests\StaticReflection\Fixtures\Example',
       T_EXTENDS => ['Sun\Tests\StaticReflection\Fixtures\Base\Example'],
-      T_IMPLEMENTS => ['Sun\Tests\StaticReflection\Fixtures\Example1Interface'],
+      T_IMPLEMENTS => ['Sun\Tests\StaticReflection\Fixtures\ExampleInterface'],
     ));
 
-    $this->assertSame(TRUE, $reflector->implementsInterface('Sun\Tests\StaticReflection\Fixtures\Base\InvisibleInterface'));
+    $this->assertSame(TRUE, $reflector->implementsInterface('Sun\Tests\StaticReflection\Fixtures\Base\ExtendedInterface'));
   }
 
   /**
@@ -803,10 +803,10 @@ EOC
       T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
       T_CLASS => 'Sun\Tests\StaticReflection\Fixtures\Example',
       T_EXTENDS => ['Sun\Tests\StaticReflection\Fixtures\Base\Example'],
-      T_IMPLEMENTS => ['Sun\Tests\StaticReflection\Fixtures\Example1Interface'],
+      T_IMPLEMENTS => ['Sun\Tests\StaticReflection\Fixtures\ExampleInterface'],
     ));
 
-    $this->assertSame(TRUE, $reflector->isSubclassOf('Sun\Tests\StaticReflection\Fixtures\Base\InvisibleInterface'));
+    $this->assertSame(TRUE, $reflector->isSubclassOf('Sun\Tests\StaticReflection\Fixtures\Base\ExtendedInterface'));
   }
 
   /**
@@ -890,8 +890,8 @@ EOC
    * @runInSeparateProcess
    */
   public function testIsSubclassOfAnyAncestorsLoadsInterfaceOfInterface() {
-    $parent        = 'Sun\Tests\StaticReflection\Fixtures\Example1Interface';
-    $parent_parent = 'Sun\Tests\StaticReflection\Fixtures\Base\InvisibleInterface';
+    $parent        = 'Sun\Tests\StaticReflection\Fixtures\ExampleInterface';
+    $parent_parent = 'Sun\Tests\StaticReflection\Fixtures\Base\ExtendedInterface';
     $this->assertFalse(interface_exists($parent, FALSE));
     $this->assertFalse(interface_exists($parent_parent, FALSE));
 

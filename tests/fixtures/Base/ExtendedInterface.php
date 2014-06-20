@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Sun\Tests\StaticReflection\Fixtures\Base\InvisibleInterface.
+ * Contains \Sun\Tests\StaticReflection\Fixtures\Base\ExtendedInterface.
  */
 
 namespace Sun\Tests\StaticReflection\Fixtures\Base;
@@ -10,5 +10,5 @@ namespace Sun\Tests\StaticReflection\Fixtures\Base;
 /**
  * Interface of interface.
  */
-interface InvisibleInterface {
+interface ExtendedInterface {
 }

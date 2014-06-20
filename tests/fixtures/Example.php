@@ -29,7 +29,7 @@ define('POORLY_CODED_APP_ROOT', 'some poorly authored code');
  *
  * Description #2.
  *
- * @see Example1Interface
+ * @see ExampleInterface
  */
-abstract class Example extends Base\Example implements Example1Interface, Base\Example2Interface, ImportedInterface, \Countable {
+abstract class Example extends Base\Example implements ExampleInterface, Base\NotImportedInterface, ImportedInterface, \Countable {
 }

@@ -7,5 +7,5 @@
 
 namespace Sun\Tests\StaticReflection\Fixtures\Base;
 
-abstract class Example extends Root {
+abstract class Example extends Root implements BaseInterface {
 }
