@@ -127,6 +127,30 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   }
 
   /**
+   * @covers ::reflect
+   * @expectedException \ReflectionException
+   */
+  public function testReflectThrowsExceptionOnBogusClassName() {
+    $classname = $this->name . 'Bogus';
+    $reflector = new ReflectionClass($classname, $this->path);
+    $method = new \ReflectionMethod($reflector, 'reflect');
+    $method->setAccessible(TRUE);
+    $method->invoke($reflector);
+  }
+
+  /**
+   * @covers ::reflect
+   * @expectedException \ReflectionException
+   */
+  public function testReflectThrowsExceptionOnBogusNameSpace() {
+    $classname = 'Bogus\\' . $this->name;
+    $reflector = new ReflectionClass($classname, $this->path);
+    $method = new \ReflectionMethod($reflector, 'reflect');
+    $method->setAccessible(TRUE);
+    $method->invoke($reflector);
+  }
+
+  /**
    * @covers ::tokenize
    * @dataProvider providerTokenize
    */

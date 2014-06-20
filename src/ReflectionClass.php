@@ -56,13 +56,24 @@ class ReflectionClass extends \ReflectionClass {
 
   /**
    * Statically reflects the PHP class file.
-   *
-   * @todo Throw \ReflectionException if classname/pathname != actual.
    */
   protected function reflect() {
     if (!isset($this->info)) {
       $content = $this->readFileHeader();
       $this->info = self::tokenize($content);
+
+      foreach (array(T_CLASS, T_INTERFACE, T_TRAIT) as $key) {
+        if ($this->info[$key] !== FALSE) {
+          if ($this->info[$key] !== $this->classname) {
+            throw new \ReflectionException(vsprintf('Expected %s but found %s in %s.', array(
+              $this->classname,
+              $this->info[$key],
+              $this->pathname,
+            )));
+          }
+          break;
+        }
+      }
     }
     return $this->info;
   }
