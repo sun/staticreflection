@@ -628,6 +628,22 @@ EOC
   }
 
   /**
+   * @covers ::implementsInterface
+   * @covers ::isSubclassOfAnyAncestors
+   * @runInSeparateProcess
+   */
+  public function testImplementsInterfaceReturnsTrueIfExtended() {
+    $reflector = $this->getClassReflectorMock(array(
+      T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
+      T_CLASS => 'Sun\Tests\StaticReflection\Fixtures\Example',
+      T_EXTENDS => ['Sun\Tests\StaticReflection\Fixtures\Base\Example'],
+      T_IMPLEMENTS => ['Sun\Tests\StaticReflection\Fixtures\ExampleInterface'],
+    ));
+
+    $this->assertSame(TRUE, $reflector->implementsInterface('Sun\Tests\StaticReflection\Fixtures\Base\BaseInterface'));
+  }
+
+  /**
    * @covers ::inNamespace
    * @dataProvider providerInNamespace
    */
