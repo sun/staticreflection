@@ -405,7 +405,10 @@ class ReflectionClass extends \ReflectionClass {
     }
     // Otherwise, inspect all ancestors. This causes all interfaces and parent
     // classes, and all of their dependencies to get autoloaded.
-    return $this->isSubclassOfAnyAncestors($info[T_EXTENDS] + $info[T_IMPLEMENTS], $class);
+    if ($this->isSubclassOfAnyAncestors($info[T_EXTENDS], $class)) {
+      return TRUE;
+    }
+    return $this->isSubclassOfAnyAncestors($info[T_IMPLEMENTS], $class);
   }
 
   /**
@@ -476,7 +479,10 @@ class ReflectionClass extends \ReflectionClass {
     }
     // Otherwise, inspect all ancestors. This causes all interfaces and parent
     // classes, and all of their dependencies to get autoloaded.
-    return $this->isSubclassOfAnyAncestors($info[T_EXTENDS] + $info[T_IMPLEMENTS], $class);
+    if ($this->isSubclassOfAnyAncestors($info[T_EXTENDS], $class)) {
+      return TRUE;
+    }
+    return $this->isSubclassOfAnyAncestors($info[T_IMPLEMENTS], $class);
   }
 
   /**

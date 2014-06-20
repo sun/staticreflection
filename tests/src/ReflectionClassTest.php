@@ -612,6 +612,22 @@ EOC
   }
 
   /**
+   * @covers ::implementsInterface
+   * @covers ::isSubclassOfAnyAncestors
+   * @runInSeparateProcess
+   */
+  public function testImplementsInterfaceReturnsTrueIfImplemented() {
+    $reflector = $this->getClassReflectorMock(array(
+      T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
+      T_CLASS => 'Sun\Tests\StaticReflection\Fixtures\Example',
+      T_EXTENDS => ['Sun\Tests\StaticReflection\Fixtures\Base\Example'],
+      T_IMPLEMENTS => ['Sun\Tests\StaticReflection\Fixtures\Example1Interface'],
+    ));
+
+    $this->assertSame(TRUE, $reflector->implementsInterface('Sun\Tests\StaticReflection\Fixtures\Base\InvisibleInterface'));
+  }
+
+  /**
    * @covers ::inNamespace
    * @dataProvider providerInNamespace
    */
@@ -775,6 +791,22 @@ EOC
       [[T_INTERFACE => 'FooInterface'], 'FooInterface'],
       [[T_TRAIT => 'FooTrait'], 'FooTrait'],
     ];
+  }
+
+  /**
+   * @covers ::isSubclassOf
+   * @covers ::isSubclassOfAnyAncestors
+   * @runInSeparateProcess
+   */
+  public function testIsSubclassOfReturnsTrueIfImplemented() {
+    $reflector = $this->getClassReflectorMock(array(
+      T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
+      T_CLASS => 'Sun\Tests\StaticReflection\Fixtures\Example',
+      T_EXTENDS => ['Sun\Tests\StaticReflection\Fixtures\Base\Example'],
+      T_IMPLEMENTS => ['Sun\Tests\StaticReflection\Fixtures\Example1Interface'],
+    ));
+
+    $this->assertSame(TRUE, $reflector->isSubclassOf('Sun\Tests\StaticReflection\Fixtures\Base\InvisibleInterface'));
   }
 
   /**
