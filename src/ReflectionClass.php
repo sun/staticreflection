@@ -402,22 +402,15 @@ class ReflectionClass extends \ReflectionClass {
    */
   public function implementsInterface($class) {
     $info = $this->reflect();
+    // Traits cannot implement interfaces.
+    if ($info[T_TRAIT]) {
+      return FALSE;
+    }
+    // An interface implements itself.
     if ($class === $info['fqcn']) {
       return TRUE;
     }
-    if ($info[T_TRAIT] || (!$info[T_IMPLEMENTS] && !$info[T_EXTENDS])) {
-      return FALSE;
-    }
-    // Check for a static matches first.
-    if ($this->isSubclassOfAny(array($class))) {
-      return TRUE;
-    }
-    // Otherwise, inspect all ancestors. This causes all interfaces and parent
-    // classes, and all of their dependencies to get autoloaded.
-    if ($this->isSubclassOfAnyAncestors($info[T_EXTENDS], $class)) {
-      return TRUE;
-    }
-    return $this->isSubclassOfAnyAncestors($info[T_IMPLEMENTS], $class);
+    return $this->isSubclassOf($class);
   }
 
   /**
