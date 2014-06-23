@@ -96,7 +96,10 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
    * @return PHPUnit_Mock_Object
    */
   private function getClassReflectorMock(array $return = array(), array $methods = array()) {
-    $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', array('reflect') + $methods, array($this->name, $this->path));
+    $reflector = $this->getMockBuilder('Sun\StaticReflection\ReflectionClass')
+      ->setMethods(array('reflect') + $methods)
+      ->disableOriginalConstructor()
+      ->getMock();
 
     // Unless explicitly specified, automatically populate the FQCN.
     if (!isset($return['fqcn'])) {
@@ -112,10 +115,11 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
       }
     }
     $reflector
-      ->expects($this->any())
+      ->expects($this->once())
       ->method('reflect')
       ->will($this->returnValue($return + $this->defaults));
 
+    $reflector->__construct($this->name, $this->path);
     return $reflector;
   }
 
@@ -931,15 +935,10 @@ EOC
     $this->assertFalse(class_exists($parent, FALSE));
     $this->assertFalse(class_exists($parent_parent, FALSE));
 
-    $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', ['reflect'], [$this->name, $this->path]);
-
-    $reflector
-      ->expects($this->exactly(2))
-      ->method('reflect')
-      ->will($this->returnValue(array(
-        T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
-        T_EXTENDS => [$parent],
-      ) + $this->defaults));
+    $reflector = $this->getClassReflectorMock(array(
+      T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
+      T_EXTENDS => [$parent],
+    ));
 
     $this->assertSame(TRUE, $reflector->isSubclassOf($parent_parent));
 
@@ -959,16 +958,11 @@ EOC
     $this->assertFalse(interface_exists($parent, FALSE));
     $this->assertFalse(interface_exists($parent_parent, FALSE));
 
-    $reflector = $this->getMock('Sun\StaticReflection\ReflectionClass', ['reflect'], [$this->name, $this->path]);
-
-    $reflector
-      ->expects($this->exactly(2))
-      ->method('reflect')
-      ->will($this->returnValue(array(
-        T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
-        T_CLASS => 'Sun\Tests\StaticReflection\Fixtures\Example',
-        T_IMPLEMENTS => [$parent],
-      ) + $this->defaults));
+    $reflector = $this->getClassReflectorMock(array(
+      T_NAMESPACE => 'Sun\Tests\StaticReflection\Fixtures',
+      T_CLASS => 'Sun\Tests\StaticReflection\Fixtures\Example',
+      T_IMPLEMENTS => [$parent],
+    ));
 
     $this->assertSame(TRUE, $reflector->isSubclassOf($parent_parent));
 

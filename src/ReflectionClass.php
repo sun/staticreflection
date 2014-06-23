@@ -52,25 +52,25 @@ class ReflectionClass extends \ReflectionClass {
   public function __construct($classname, $pathname) {
     $this->classname = $classname;
     $this->pathname = $pathname;
+    // Resemble \ReflectionClass instantiation.
+    $this->info = $this->reflect();
   }
 
   /**
    * Statically reflects the PHP class file.
    */
   protected function reflect() {
-    if (!isset($this->info)) {
-      $content = $this->readFileHeader();
-      $this->info = self::tokenize($content);
+    $content = $this->readFileHeader();
+    $info = self::tokenize($content);
 
-      if ($this->info['fqcn'] !== $this->classname) {
-        throw new \ReflectionException(vsprintf('Expected %s but found %s in %s.', array(
-          $this->classname,
-          $this->info['fqcn'],
-          $this->pathname,
-        )));
-      }
+    if ($info['fqcn'] !== $this->classname) {
+      throw new \ReflectionException(vsprintf('Expected %s but found %s in %s.', array(
+        $this->classname,
+        $info['fqcn'],
+        $this->pathname,
+      )));
     }
-    return $this->info;
+    return $info;
   }
 
   /**
@@ -262,7 +262,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function getDocComment() {
-    return $this->reflect()[T_DOC_COMMENT];
+    return $this->info[T_DOC_COMMENT];
   }
 
   /**
@@ -355,7 +355,7 @@ class ReflectionClass extends \ReflectionClass {
    * class are returned.
    */
   public function getInterfaceNames() {
-    return $this->reflect()[T_IMPLEMENTS];
+    return $this->info[T_IMPLEMENTS];
   }
 
   /**
@@ -383,7 +383,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function getNamespaceName() {
-    return $this->reflect()[T_NAMESPACE];
+    return $this->info[T_NAMESPACE];
   }
 
   /**
@@ -401,13 +401,12 @@ class ReflectionClass extends \ReflectionClass {
    * of accuracy is required.
    */
   public function implementsInterface($class) {
-    $info = $this->reflect();
     // Traits cannot implement interfaces.
-    if ($info[T_TRAIT]) {
+    if ($this->info[T_TRAIT]) {
       return FALSE;
     }
     // An interface implements itself.
-    if ($class === $info['fqcn']) {
+    if ($class === $this->info['fqcn']) {
       return TRUE;
     }
     return $this->isSubclassOf($class);
@@ -417,36 +416,35 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function inNamespace() {
-    return !empty($this->reflect()[T_NAMESPACE]);
+    return !empty($this->info[T_NAMESPACE]);
   }
 
   /**
    * {@inheritdoc}
    */
   public function isAbstract() {
-    return $this->reflect()[T_ABSTRACT];
+    return $this->info[T_ABSTRACT];
   }
 
   /**
    * {@inheritdoc}
    */
   public function isFinal() {
-    return $this->reflect()[T_FINAL];
+    return $this->info[T_FINAL];
   }
 
   /**
    * {@inheritdoc}
    */
   public function isInstantiable() {
-    $info = $this->reflect();
-    return $info[T_CLASS] && !$info[T_ABSTRACT];
+    return $this->info[T_CLASS] && !$this->info[T_ABSTRACT];
   }
 
   /**
    * {@inheritdoc}
    */
   public function isInterface() {
-    return !empty($this->reflect()[T_INTERFACE]);
+    return !empty($this->info[T_INTERFACE]);
   }
 
   /**
@@ -460,19 +458,17 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function isIterateable() {
-    $info = $this->reflect();
-    return array_intersect($info[T_IMPLEMENTS], array('Iterator', 'IteratorAggregate', 'Traversable')) || preg_grep('/Iterator$/', $info[T_IMPLEMENTS]);
+    return array_intersect($this->info[T_IMPLEMENTS], array('Iterator', 'IteratorAggregate', 'Traversable')) || preg_grep('/Iterator$/', $this->info[T_IMPLEMENTS]);
   }
 
   /**
    * {@inheritdoc}
    */
   public function isSubclassOf($class) {
-    $info = $this->reflect();
-    if (!$info[T_EXTENDS] && !$info[T_IMPLEMENTS]) {
+    if (!$this->info[T_EXTENDS] && !$this->info[T_IMPLEMENTS]) {
       return FALSE;
     }
-    if ($class === $info['fqcn']) {
+    if ($class === $this->info['fqcn']) {
       return FALSE;
     }
     // Check for a direct match first.
@@ -481,10 +477,10 @@ class ReflectionClass extends \ReflectionClass {
     }
     // Otherwise, inspect all ancestors. This causes all interfaces and parent
     // classes, and all of their dependencies to get autoloaded.
-    if ($this->isSubclassOfAnyAncestors($info[T_EXTENDS], $class)) {
+    if ($this->isSubclassOfAnyAncestors($this->info[T_EXTENDS], $class)) {
       return TRUE;
     }
-    return $this->isSubclassOfAnyAncestors($info[T_IMPLEMENTS], $class);
+    return $this->isSubclassOfAnyAncestors($this->info[T_IMPLEMENTS], $class);
   }
 
   /**
@@ -512,11 +508,10 @@ class ReflectionClass extends \ReflectionClass {
    * @see ReflectionClass::isSubclassOf()
    */
   public function isSubclassOfAny(array $classes) {
-    $info = $this->reflect();
-    if ($info[T_EXTENDS] && array_intersect($info[T_EXTENDS], $classes)) {
+    if ($this->info[T_EXTENDS] && array_intersect($this->info[T_EXTENDS], $classes)) {
       return TRUE;
     }
-    return $info[T_IMPLEMENTS] && array_intersect($info[T_IMPLEMENTS], $classes);
+    return $this->info[T_IMPLEMENTS] && array_intersect($this->info[T_IMPLEMENTS], $classes);
   }
 
   /**
@@ -550,7 +545,7 @@ class ReflectionClass extends \ReflectionClass {
    * {@inheritdoc}
    */
   public function isTrait() {
-    return !empty($this->reflect()[T_TRAIT]);
+    return !empty($this->info[T_TRAIT]);
   }
 
   /**
