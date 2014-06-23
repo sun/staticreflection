@@ -98,7 +98,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   private function getClassReflectorMock(array $return = array(), array $methods = array()) {
     $reflector = $this->getMockBuilder('Sun\StaticReflection\ReflectionClass')
       ->setMethods(array('reflect') + $methods)
-      ->disableOriginalConstructor()
+      ->setConstructorArgs(array($this->name, $this->path))
       ->getMock();
 
     // Unless explicitly specified, automatically populate the FQCN.
@@ -120,6 +120,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
       ->will($this->returnValue($return + $this->defaults));
 
     $reflector->__construct($this->name, $this->path);
+
     return $reflector;
   }
 
