@@ -405,30 +405,16 @@ class Space
   }
 
   /**
-   * @covers ::parseDocComment
+   * @covers ::getSummary
+   * @covers ::getPlainDocComment
+   * @dataProvider providerGetSummary
    */
-  public function testParseDocComment() {
-    $reflector = new ReflectionClass($this->name, $this->path);
-    $this->assertEquals(array(
-      'summary' => 'PHPDoc summary line. Summary may wrap.',
-      'tag' => array(''),
-      'single' => array('parameter'),
-      'multiple' => array('type $param'),
-      'see' => array('ExampleInterface'),
-    ), $reflector->parseDocComment());
+  public function testGetSummary($expected, $docblock) {
+    $reflector = $this->getClassReflectorMock(array(T_DOC_COMMENT => $docblock));
+    $this->assertSame($expected, $reflector->getSummary());
   }
 
-  /**
-   * @covers ::parseSummary
-   * @dataProvider providerParseSummary
-   */
-  public function testParseSummary($expected, $docblock) {
-    $method = new \ReflectionMethod('Sun\StaticReflection\ReflectionClass', 'parseSummary');
-    $method->setAccessible(TRUE);
-    $this->assertSame($expected, $method->invoke(NULL, $docblock));
-  }
-
-  public function providerParseSummary() {
+  public function providerGetSummary() {
     return [
       ['', <<<EOC
 /**
@@ -444,6 +430,13 @@ EOC
       ['Squashed.', <<<EOC
 /**
  *Squashed.
+ */
+EOC
+],
+      ['Extraneous newline.', <<<EOC
+/**
+ * Extraneous newline.
+ *
  */
 EOC
 ],
@@ -498,20 +491,26 @@ EOC
 **/
 EOC
 ],
+      ['Doc comment without inner asterisks.', <<<EOC
+/**
+ Doc comment without inner asterisks.
+ */
+EOC
+],
     ];
   }
 
   /**
-   * @covers ::parseAnnotations
-   * @dataProvider providerParseAnnotations
+   * @covers ::getAnnotations
+   * @covers ::getPlainDocComment
+   * @dataProvider providerGetAnnotations
    */
-  public function testParseAnnotations($expected, $docblock) {
-    $method = new \ReflectionMethod('Sun\StaticReflection\ReflectionClass', 'parseAnnotations');
-    $method->setAccessible(TRUE);
-    $this->assertSame($expected, $method->invoke(NULL, $docblock));
+  public function testGetAnnotations($expected, $docblock) {
+    $reflector = $this->getClassReflectorMock(array(T_DOC_COMMENT => $docblock));
+    $this->assertSame($expected, $reflector->getAnnotations());
   }
 
-  public function providerParseAnnotations() {
+  public function providerGetAnnotations() {
     return [
       [[], <<<EOC
 /**
@@ -570,6 +569,13 @@ EOC
  * Alternate doc comment end style.
  * @param string
 **/
+EOC
+],
+      [['param' => ['string']], <<<EOC
+/**
+ Doc comment without inner asterisks.
+ @param string
+*/
 EOC
 ],
       [['Squashed' => ['tag']], <<<EOC
