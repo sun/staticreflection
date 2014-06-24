@@ -47,11 +47,26 @@ class ReflectionClass extends \ReflectionClass {
    * @param string $classname
    *   The fully-qualified class name (FQCN) to reflect.
    * @param string $pathname
-   *   The pathname of the file containing $classname.
+   *   The pathname of the file containing $classname. If omitted, a native
+   *   \ReflectionClass will be instantiated.
+   *
+   * @throws \ReflectionException
+   *   If the given $classname is not located in the given $pathname.
    */
-  public function __construct($classname, $pathname) {
-    $this->classname = $classname;
-    $this->pathname = $pathname;
+  public function __construct($classname, $pathname = NULL) {
+    // If the pathname is unknown, it must be retrieved from \ReflectionClass.
+    // If a class instance was passed then there's no point in omitting
+    // \ReflectionClass, since code has been loaded already.
+    if (!isset($pathname) || !is_string($classname)) {
+      parent::__construct($classname);
+      $this->classname = is_object($classname) ? get_class($classname) : $classname;
+      $this->pathname = parent::getFileName();
+    }
+    else {
+      $this->classname = $classname;
+      $this->pathname = $pathname;
+    }
+
     // Resemble \ReflectionClass instantiation.
     $this->info = $this->reflect();
   }

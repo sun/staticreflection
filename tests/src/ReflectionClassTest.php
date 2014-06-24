@@ -134,6 +134,26 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   }
 
   /**
+   * @covers ::__construct
+   */
+  public function testConstructWithInstance() {
+    $reflector = new ReflectionClass($this, __FILE__);
+    $this->assertSame(__CLASS__, $reflector->getName());
+  }
+
+  /**
+   * @covers ::__construct
+   * @runInSeparateProcess
+   */
+  public function testConstructWithoutPathname() {
+    $this->assertFalse(class_exists($this->name, FALSE));
+    $reflector = new ReflectionClass($this->name);
+    $this->assertTrue(class_exists($this->name, FALSE));
+    $this->assertSame(realpath($this->path), $reflector->getFileName());
+    $this->assertInstanceOf('\ReflectionClass', $reflector);
+  }
+
+  /**
    * @covers ::reflect
    * @covers ::readFileHeader
    */
