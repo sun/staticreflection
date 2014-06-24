@@ -51,7 +51,8 @@ class ReflectionClass extends \ReflectionClass {
    *   \ReflectionClass will be instantiated.
    *
    * @throws \ReflectionException
-   *   If the given $classname is not located in the given $pathname.
+   *   If the given $classname is not located in the given $pathname, or if
+   *   $pathname does not exist.
    */
   public function __construct($classname, $pathname = NULL) {
     // If the pathname is unknown, it must be retrieved from \ReflectionClass.
@@ -65,9 +66,14 @@ class ReflectionClass extends \ReflectionClass {
     else {
       $this->classname = $classname;
       $this->pathname = $pathname;
+
+      if (!is_readable($this->pathname)) {
+        throw new \ReflectionException(sprintf('Unable to read file %s.', $this->pathname));
+      }
     }
 
-    // Resemble \ReflectionClass instantiation.
+    // Instantiating \ReflectionClass immediately triggers reflection; resemble
+    // that.
     $this->info = $this->reflect();
   }
 
@@ -90,8 +96,6 @@ class ReflectionClass extends \ReflectionClass {
 
   /**
    * Reads the PHP class file header.
-   *
-   * @todo Throw \ReflectionException on 404.
    */
   private function readFileHeader() {
     $content = '';

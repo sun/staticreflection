@@ -139,6 +139,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
   public function testConstructWithInstance() {
     $reflector = new ReflectionClass($this, __FILE__);
     $this->assertSame(__CLASS__, $reflector->getName());
+    $this->assertSame(__FILE__, $reflector->getFileName());
   }
 
   /**
@@ -151,6 +152,15 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
     $this->assertTrue(class_exists($this->name, FALSE));
     $this->assertSame(realpath($this->path), $reflector->getFileName());
     $this->assertInstanceOf('\ReflectionClass', $reflector);
+  }
+
+  /**
+   * @covers ::__construct
+   * @expectedException \ReflectionException
+   */
+  public function testConstructWithBogusPathname() {
+    $pathname = __DIR__ . '/404/Class.php';
+    $reflector = new ReflectionClass($this->name, $pathname);
   }
 
   /**
@@ -170,7 +180,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
    * @covers ::reflect
    * @expectedException \ReflectionException
    */
-  public function testReflectThrowsExceptionOnBogusClassName() {
+  public function testReflectWithBogusClassname() {
     $classname = $this->name . 'Bogus';
     $reflector = new ReflectionClass($classname, $this->path);
     $method = new \ReflectionMethod($reflector, 'reflect');
@@ -182,7 +192,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
    * @covers ::reflect
    * @expectedException \ReflectionException
    */
-  public function testReflectThrowsExceptionOnBogusNameSpace() {
+  public function testReflectWithBogusNamespace() {
     $classname = 'Bogus\\' . $this->name;
     $reflector = new ReflectionClass($classname, $this->path);
     $method = new \ReflectionMethod($reflector, 'reflect');
