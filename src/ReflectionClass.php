@@ -31,8 +31,7 @@ namespace Sun\StaticReflection;
  *
  * @author Daniel F. Kudwien (sun)
  *
- * @todo Dynamically instantiate the wrapped \ReflectionClass in case a parent
- *   method requiring native/non-static reflection is called.
+ * @todo Lazy-instantiate \ReflectionClass in case a parent method is called.
  */
 class ReflectionClass extends \ReflectionClass {
 
@@ -136,10 +135,8 @@ class ReflectionClass extends \ReflectionClass {
    *   - T_ABSTRACT, T_FINAL: Respective Boolean flags.
    *   - T_DOC_COMMENT: The doc comment block of the class.
    *
-   * This is a vastly simplified re-implementation of Doctrine's TokenParser.
+   * Vastly simplified re-implementation of Doctrine's TokenParser.
    * @see \Doctrine\Common\Annotations\TokenParser
-   *
-   * @todo Add public static utility method returning translated values.
    */
   private static function tokenize($content) {
     $tokens = token_get_all($content);
