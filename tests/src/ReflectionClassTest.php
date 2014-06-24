@@ -433,9 +433,16 @@ EOC
  */
 EOC
 ],
-      ['Extraneous newline.', <<<EOC
+      ['Extraneous leading newline.', <<<EOC
 /**
- * Extraneous newline.
+ *
+ * Extraneous leading newline.
+ */
+EOC
+],
+      ['Extraneous trailing newline.', <<<EOC
+/**
+ * Extraneous trailing newline.
  *
  */
 EOC
@@ -525,7 +532,7 @@ EOC
 ],
       [[], <<<EOC
 /**
- * Summary containing a @tag.
+ * Summary containing a @tag looking like a value.
  */
 EOC
 ],

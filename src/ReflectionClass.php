@@ -298,6 +298,7 @@ class ReflectionClass extends \ReflectionClass {
         // Normalize line endings.
         '@\r?\n@',
       ], ['', "\n"], $this->getDocComment());
+      $this->plainDocComment = ltrim($this->plainDocComment, "\n");
     }
     return $this->plainDocComment;
   }
@@ -310,14 +311,11 @@ class ReflectionClass extends \ReflectionClass {
    */
   public function getSummary() {
     // Strip everything starting with the first PHPDoc tag/annotation.
-    $content = preg_replace('/^@.+/ms', '', $this->getPlainDocComment());
+    $summary = preg_replace('/^@.+/ms', '', $this->getPlainDocComment());
 
     // Extract first paragraph (two newlines).
-    if (preg_match('@\n?(.+?)(?=\n\n)@s', $content, $matches)) {
+    if (preg_match('@(.+?)(?=\n\n)@s', $summary, $matches)) {
       $summary = $matches[1];
-    }
-    else {
-      $summary = substr($content, 1);
     }
 
     // Join multiple lines onto one.
