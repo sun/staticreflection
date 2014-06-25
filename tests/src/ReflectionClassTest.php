@@ -405,8 +405,112 @@ class Space
   }
 
   /**
+   * @covers ::getPlainDocComment
+   * @dataProvider providerGetPlainDocComment
+   */
+  public function testGetPlainDocComment($expected, $docblock) {
+    $this->assertSame($expected, ReflectionClass::getPlainDocComment($docblock));
+  }
+
+  public function providerGetPlainDocComment() {
+    return [
+      ['', <<<EOC
+/**
+ */
+EOC
+],
+      ['One line.
+', <<<EOC
+/**
+ * One line.
+ */
+EOC
+],
+      ['Squashed.
+', <<<EOC
+/**
+ *Squashed.
+ */
+EOC
+],
+      ['Extraneous leading newline.
+', <<<EOC
+/**
+ *
+ * Extraneous leading newline.
+ */
+EOC
+],
+      ['Extraneous trailing newline.
+', <<<EOC
+/**
+ * Extraneous trailing newline.
+ *
+ */
+EOC
+],
+      ['Extraneous white-space on blank line
+
+ and leading white-space on this line.
+', <<<EOC
+/**
+ * Extraneous white-space on blank line
+ * 
+ *  and leading white-space on this line.
+ */
+EOC
+],
+      ['First line.
+Second line.
+
+Description.
+', <<<EOC
+/**
+ * First line.
+ * Second line.
+ *
+ * Description.
+ */
+EOC
+],
+      ['Some
+- List that
+  wraps with indentation.
+', <<<EOC
+/**
+ * Some
+ * - List that
+ *   wraps with indentation.
+ */
+EOC
+],
+      ['Some edge-case
+* Markdown  
+  formatted
+* list
+', <<<EOC
+/**
+ * Some edge-case
+ * * Markdown  
+ *   formatted
+ * * list
+ */
+EOC
+],
+      ['Alternate doc comment end style.
+', <<<EOC
+/**
+ * Alternate doc comment end style.
+**/
+EOC
+],
+    ];
+  }
+
+  /**
    * @covers ::getSummary
    * @covers ::getPlainDocComment
+   * @covers ::parseSummary
    * @dataProvider providerGetSummary
    */
   public function testGetSummary($expected, $docblock) {
@@ -510,6 +614,7 @@ EOC
   /**
    * @covers ::getAnnotations
    * @covers ::getPlainDocComment
+   * @covers ::parseAnnotations
    * @dataProvider providerGetAnnotations
    */
   public function testGetAnnotations($expected, $docblock) {

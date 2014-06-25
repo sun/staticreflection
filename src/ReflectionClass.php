@@ -38,7 +38,6 @@ class ReflectionClass extends \ReflectionClass {
   private $classname;
   private $pathname;
   private $info;
-  private $plainDocComment;
   private static $ancestorCache = array();
 
   /**
@@ -285,19 +284,24 @@ class ReflectionClass extends \ReflectionClass {
   /**
    * Returns the cleaned doc commment block (without surrounding asterisks).
    *
+   * @param string $docblock
+   *   The original doc comment block, as returned by
+   *   ReflectionClass::getDocComment().
+   *
    * @return string
    */
-  private function getPlainDocComment() {
-    if (!isset($this->plainDocComment)) {
-      $this->plainDocComment = preg_replace([
-        // Strip trailing '*/', leading '/**', and '*' prefixes.
-        '@^[ \t]*\*+/$|^[ \t]*/?\*+[ \t]*@m',
-        // Normalize line endings.
-        '@\r?\n@',
-      ], ['', "\n"], $this->getDocComment());
-      $this->plainDocComment = ltrim($this->plainDocComment, "\n");
+  public static function getPlainDocComment($docblock) {
+    $plainDocComment = preg_replace([
+      // Strip trailing '*/', leading '/**', and '*' prefixes.
+      '@^[ \t]*\*+/$|^[ \t]*/?\*+[ \t]?@m',
+      // Normalize line endings.
+      '@\r?\n@',
+    ], ['', "\n"], $docblock);
+    $plainDocComment = trim($plainDocComment, "\n");
+    if ($plainDocComment !== '') {
+      $plainDocComment .= "\n";
     }
-    return $this->plainDocComment;
+    return $plainDocComment;
   }
 
   /**
@@ -307,8 +311,22 @@ class ReflectionClass extends \ReflectionClass {
    *   The PHPDoc summary line.
    */
   public function getSummary() {
+    return self::parseSummary(self::getPlainDocComment($this->getDocComment()));
+  }
+
+  /**
+   * Parses the summary line from a plain doc comment block.
+   *
+   * @param string $plainDocComment
+   *   The plain doc comment block (without surrounding asterisks), as returned
+   *   by ReflectionClass::getPlainDocComment().
+   *
+   * @return string
+   *   The PHPDoc summary line.
+   */
+  public static function parseSummary($plainDocComment) {
     // Strip everything starting with the first PHPDoc tag/annotation.
-    $summary = preg_replace('/^@.+/ms', '', $this->getPlainDocComment());
+    $summary = preg_replace('/^@.+/ms', '', $plainDocComment);
 
     // Extract first paragraph (two newlines).
     if (preg_match('@(.+?)(?=\n\n)@s', $summary, $matches)) {
@@ -322,7 +340,21 @@ class ReflectionClass extends \ReflectionClass {
   /**
    * Returns the PHPDoc tags/annotations of the class doc comment block.
    *
+   * @return array
+   *   The parsed annotations. Each value is an array of values.
+   */
+  public function getAnnotations() {
+    return self::parseAnnotations(self::getPlainDocComment($this->getDocComment()));
+  }
+
+  /**
+   * Parses the PHPDoc tags/annotations of a plain doc comment block.
+   *
    * Only single-line tags/annotations (key/value pairs) are supported.
+   *
+   * @param string $plainDocComment
+   *   The plain doc comment block (without surrounding asterisks), as returned
+   *   by ReflectionClass::getPlainDocComment().
    *
    * @return array
    *   The parsed annotations. Each value is an array of values.
@@ -331,9 +363,9 @@ class ReflectionClass extends \ReflectionClass {
    * @author Sebastian Bergmann <sebastian@phpunit.de>
    * @copyright 2001-2014 Sebastian Bergmann <sebastian@phpunit.de>
    */
-  public function getAnnotations() {
+  public static function parseAnnotations($plainDocComment) {
     $annotations = array();
-    if (preg_match_all('/^[ \t]*@(?P<name>[A-Za-z_-]+)(?:[ \t]+(?P<value>.*?))?[ \t]*$/m', $this->getPlainDocComment(), $matches)) {
+    if (preg_match_all('/^[ \t]*@(?P<name>[A-Za-z_-]+)(?:[ \t]+(?P<value>.*?))?[ \t]*$/m', $plainDocComment, $matches)) {
       for ($i = 0, $ii = count($matches[0]); $i < $ii; ++$i) {
         $annotations[$matches['name'][$i]][] = $matches['value'][$i];
       }
