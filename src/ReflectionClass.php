@@ -65,10 +65,6 @@ class ReflectionClass extends \ReflectionClass {
     else {
       $this->classname = $classname;
       $this->pathname = $pathname;
-
-      if (!is_readable($this->pathname)) {
-        throw new \ReflectionException(sprintf('Unable to read file %s.', $this->pathname));
-      }
     }
 
     // Instantiating \ReflectionClass immediately triggers reflection; resemble
@@ -101,7 +97,13 @@ class ReflectionClass extends \ReflectionClass {
 
     // \SplFileObject is very resource-intensive when operating on thousands of
     // files. Use legacy functions until PHP core improves.
-    $file = fopen($this->pathname, 'r');
+    // Use error suppression instead of a separate is_file() upfront, since the
+    // latter may take up to 10% of wall time on slower filesystems and
+    // pathnames are known to exist in the primary use-case.
+    $file = @fopen($this->pathname, 'r');
+    if ($file === FALSE) {
+      throw new \ReflectionException(sprintf('Unable to read file %s.', $this->pathname));
+    }
     while (FALSE !== $line = fgets($file)) {
       $content .= $line;
       if (preg_match('@^\s*(?:(?:abstract|final)\s+)?(?:interface|class|trait)\s+\w+@', $line)) {

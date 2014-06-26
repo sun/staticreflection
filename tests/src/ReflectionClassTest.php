@@ -156,6 +156,7 @@ class ReflectionClassTest extends \PHPUnit_Framework_TestCase {
 
   /**
    * @covers ::__construct
+   * @covers ::readFileHeader
    * @expectedException \ReflectionException
    */
   public function testConstructWithBogusPathname() {
