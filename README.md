@@ -1,44 +1,34 @@
 # StaticReflection [![Build Status](https://travis-ci.org/sun/staticreflection.svg)](https://travis-ci.org/sun/staticreflection) [![Code Coverage](https://scrutinizer-ci.com/g/sun/staticreflection/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/sun/staticreflection/?branch=master) [![Code Quality](https://scrutinizer-ci.com/g/sun/staticreflection/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/sun/staticreflection/?branch=master)
 _Static PHP class code reflection for post-discovery scenarios._
 
-This utility library for PHP frameworks/applications allows to reflect PHP class
-files (headers) without loading them into memory, if the filesystem locations of
-each class is known already _(cf. discovery/classmap)_.
+This utility library for PHP frameworks allows to reflect the file header of a
+PHP class without loading its code into memory, if its filesystem location is
+known already (e.g., via discovery/classmap).
 
-Static reflection is useful in case you want to check a _large list_ of
-previously discovered class files for common aspects, like interfaces or base
-classes, in order to filter out inapplicable candidates.
-
-In a decoupled, modern code base, native [PHP Reflection] can grow out of
-control very easily, as it loads every reflected class and interface, as well as
-every dependency of every class and interface. — Static reflection avoids to
-(auto-)load all dependencies and ancestor classes of each reflected class into
-memory.
-
-High memory consumption can be a problem, because PHP's default memory limit is
-very small.  Even if it was increased, just loading hundreds or even thousands
-of classes may easily exceed a custom limit, too.
-
-When reflecting 1,000+ classes (e.g., tests), then, on average, 3x times more
-PHP files are loaded into memory, which can result in a peak memory consumption
-of 120+ MB by the total loaded code only — even though you only care for the
-filtered 1k.
-
-In the worst/ideal case, you're just trying to generate a _list_ of
-available classes, without using them immediately (e.g., for a UI/CLI selection
-or swappable/configurable plugin implementations).
+Static reflection is useful to filter a large list of previously discovered
+class files for common aspects like interfaces or base classes.
 
 `ReflectionClass` provides the same API as the native `\ReflectionClass`.
 
-Example [xhprof](http://php.net/manual/en/book.xhprof.php) diff results:
+Native [PHP Reflection] can easily grow out of control, because it not only
+loads the reflected class, but also all dependent classes and interfaces.  PHP
+code cannot be unloaded.  A high memory consumption may cause the application to
+exceed PHP's memory limit. — Static reflection avoids to (auto-)load all
+dependencies and ancestor classes of each reflected class into memory.
 
-1,538 candidate classes, of which 180 are filtered out (since abstract, traits,
-interfaces, or other helper classes):
+In the worst/ideal use-case, you're only generating a list of _available_
+classes, without using them immediately (e.g., for user selection or swappable
+plugin implementations).
+
+Example [xhprof](http://php.net/manual/en/book.xhprof.php) diff result:
+
+1,538 candidate classes, of which 180 interfaces, traits, abstract and other
+helper classes are filtered out:
 
 |       | \ReflectionClass | ReflectionClass | Diff | Diff% |
 | ----- | ----------------:| ---------------:| ----:| -----:|
 | Number of Function Calls | 64,747 | 202,783 | 138,036 | 213.2%
-| Incl. Wall Time (microsec) | 2,514,801 | 3,272,539 |757,738 | 30.1%
+| Incl. Wall Time (microsecs) | 2,514,801 | 3,272,539 |757,738 | 30.1%
 | Incl. CPU (microsecs) | 2,480,415 | 3,120,020 | 639,605 | 25.8%
 | Incl. MemUse (bytes) | 108,805,120 | 10,226,160 | -98,578,960 | -90.6%
 | Incl. PeakMemUse (bytes) | 108,927,216 | 10,347,608 | -98,579,608 | **-90.5%**
@@ -46,63 +36,30 @@ interfaces, or other helper classes):
 
 ## Usage Example
 
-1. Some (arbitrary) discovery, producing a classmap:  
-    _(…you may skip this.)_
-
-    ```php
-    use Sun\StaticReflection\ReflectionClass;
-
-    $loader = require __DIR__ . '/vendor/autoload.php';
-
-    // This working example does not have a known classmap upfront, so:
-    // Generate one, utilizing the ClassLoader.
-    $prefixes = $loader->getPrefixesPsr4();
-
-    $flags = \FilesystemIterator::UNIX_PATHS;
-    $flags |= \FilesystemIterator::CURRENT_AS_SELF;
-
-    $classmap = array();
-    foreach ($prefixes as $namespace_prefix => $paths) {
-      foreach ($paths as $path) {
-        $iterator = new \RecursiveDirectoryIterator($path, $flags);
-        $filter = new \RecursiveCallbackFilterIterator($iterator, function ($current, $key, $iterator) {
-          if ($iterator->hasChildren()) {
-            return TRUE;
-          }
-          return $current->isFile() && $current->getExtension() === 'php';
-        });
-        $files = new \RecursiveIteratorIterator($filter);
-        foreach ($files as $fileinfo) {
-          $class = $namespace_prefix;
-          if ('' !== $subpath = $fileinfo->getSubPath()) {
-            $class .= strtr($subpath, '/', '\\') . '\\';
-          }
-          $class .= $fileinfo->getBasename('.php');
-          $classmap[$class] = $fileinfo->getPathname();
-        }
-      }
-    }
-    echo json_encode($classmap, JSON_PRETTY_PRINT);
-    ```
+1. Prerequisite: Some discovery produces a classmap:
 
     ```json
     {
-      "Sun\StaticReflection\ReflectionClass": "src/ReflectionClass.php",
-      "Sun\Tests\StaticReflection\ReflectionClassTest": "tests/src/ReflectionClassTest.php",
-      "Sun\Tests\StaticReflection\Fixtures\Example": "tests/fixtures/Example.php",
-      "Sun\Tests\StaticReflection\Fixtures\Base\ImportedInterface": "tests/fixtures/Base/ImportedInterface.php"
+      "Sun\StaticReflection\ReflectionClass":
+        "./src/ReflectionClass.php",
+      "Sun\Tests\StaticReflection\ReflectionClassTest":
+        "./tests/src/ReflectionClassTest.php",
+      "Sun\Tests\StaticReflection\Fixtures\Example":
+        "./tests/fixtures/Example.php",
+      "Sun\Tests\StaticReflection\Fixtures\Base\ImportedInterface":
+        "./tests/fixtures/Base/ImportedInterface.php"
       ...
     }
     ```
     → You have a `classname => pathname` map.
 
-1. _The Real Meat:_ **Filter all discovered class files.**
+1. Filter all discovered class files:
 
     ```php
+    use Sun\StaticReflection\ReflectionClass;
+
     $list = array();
     foreach ($classmap as $classname => $pathname) {
-      // Note: This IS a \ReflectionClass, but does NOT construct one.
-      /** @var \Sun\StaticReflection\ReflectionClass */
       $class = new ReflectionClass($classname, $pathname);
 
       // Only include tests.
@@ -110,11 +67,10 @@ interfaces, or other helper classes):
         continue;
       }
 
-      // ...and (optionally) prepare them for a listing/later selection:
-      $doc = $class->parseDocComment();
+      // …optionally prepare them for a listing/later selection:
       $list[$classname] = array(
-        'summary' => $doc['summary'],
-        'covers' => $doc['coversDefaultClass'][0],
+        'summary' => $class->getSummary(),
+        'covers' => $class->getAnnotations()['coversDefaultClass'][0],
       );
     }
     echo json_encode($list, JSON_PRETTY_PRINT);
@@ -128,9 +84,8 @@ interfaces, or other helper classes):
       }
     }
     ```
-    → `ReflectionClass` achieved everything you wanted to achieve.
-
-    …but without using `\ReflectionClass` + loading everything into memory.
+    → You filtered the list of available classes, without loading all code into
+    memory.
 
 1. Why this matters:
 
@@ -145,90 +100,62 @@ interfaces, or other helper classes):
     {
       "Sun\Tests\StaticReflection\ReflectionClassTest": false,
       "Sun\Tests\StaticReflection\Fixtures\Example": false,
-      "Sun\Tests\StaticReflection\Fixtures\Example1Interface": true,
+      "Sun\Tests\StaticReflection\Fixtures\ExampleInterface": true,
       "Sun\Tests\StaticReflection\Fixtures\Base\Example": true,
       ...
     }
     ```
-    → The reflected classes themselves did not get loaded.
+    → Only the **ancestors** of each class/interface were loaded. The
+    statically reflected classes themselves did not get loaded.
 
-    However, you asked each class whether it is a subclass of _X_.  Due to
-    class/interface inheritance, the condition of _X_ may not necessarily be
-    within the "visible" scope of the statically reflected class (i.e., the
-    class file itself).  So what happened?
+1. _ProTip™_ - `ReflectionClass::isSubclassOfAny()`
 
-    Instead of reflecting each class file itself, _only_ the **ancestors** of
-    each class/interface were introspected.
+    To filter for a set of common parent classes/interfaces, check the
+    statically reflected information first.  Only proceed to `isSubclassOf()` in
+    case you need to check further; e.g.:
 
-    As an example, the following inheritance tree maps to the above
-    `Fixtures\Example` class:
-
+    ```php
+    // Static reflection.
+    if (!$class->isSubclassOfAny(array('Condition\FirstFlavor', 'Condition\SecondFlavor'))) {
+      continue;
+    }
+    // Native reflection of ancestors (if the reflected class has any).
+    if (!$class->isSubclassOf('Condition\BaseFlavor')) {
+      continue;
+    }
     ```
-    Sun\Tests\StaticReflection\Fixtures\Example
-    ∟ extends
-      ∟ Sun\Tests\StaticReflection\Fixtures\Base\Example
-        ∟ Sun\Tests\StaticReflection\Fixtures\Base\Root
-    ∟ implements
-      ∟ Sun\Tests\StaticReflection\Fixtures\Base\Example2Interface
-      ∟ Sun\Tests\StaticReflection\Fixtures\Base\ImportedInterface
-      ∟ Sun\Tests\StaticReflection\Fixtures\Example1Interface
-        ∟ Sun\Tests\StaticReflection\Fixtures\Base\InvisibleInterface
-    ```
-    → Only the parent class and interfaces _(ancestors)_ were autoloaded.
-
-    That is, because the full stack of their dependencies was not directly
-    _"visible"_ in the statically reflected code.
-
-
-_Pro-Tip:_ To filter for a unique parent/root class/interface, use
-`ReflectionClass::isSubclassOfAny()` to check for the most common/expected
-parent classes and only compare against the statically reflected information
-first.  Only proceed to `isSubclassOf()` in case you want/need to check
-further; e.g.:
-
-```php
-// Static reflection.
-if (!$class->isSubclassOfAny(['Condition\CommonFlavor', 'Condition\AltFlavor'])) {
-  continue;
-}
-// Native reflection of ancestors (if the reflected class has any).
-if (!$class->isSubclassOf('Condition\Absolute\Root')) {
-  continue;
-}
-```
 
 
 ## Requirements
 
-* PHP >=5.4.2
+* PHP 5.4.2+
 
 
 ## Limitations
 
-1. Only one class/interface/trait per file (PSR-2, PSR-0/PSR-4).
+1. Only one class/interface/trait per file (PSR-2, PSR-0/PSR-4), which must be
+    defined _first_ in the file.
 
-1. `implementsInterface($interface)` returns TRUE even if `$interface` is a
+1. `implementsInterface($interface)` returns `TRUE` even if `$interface` is a
     class.
 
 1. `\ReflectionClass::IS_IMPLICIT_ABSTRACT` is not supported, since methods are
     not analyzed. (only the file header is analyzed)
 
-1. `\ReflectionClass::$name` is read-only and thus not available. Use
+1. `\ReflectionClass::$name` is read-only and thus not available. Use 
     `getName()` instead.
 
 1. Calling any other `\ReflectionClass` methods that are not implemented (yet)
-    causes a **fatal error**.
+    causes a fatal error.
 
-    The parent `\ReflectionClass` class might be dynamically instantiated
-    on-demand in the future.  `ReflectionClass` does implement all methods that
-    can be technically supported already.
+    The parent `\ReflectionClass` class might be lazily instantiated on-demand
+    in the future (PRs welcome).  `ReflectionClass` does implement all methods
+    that can be technically supported already.
 
 
 ## Notes
 
-* Technically, StaticReflection is able to work around bytecode caches that are
-    stripping off comments.  
-    _(…just in case that even counts as an issue today)_
+* StaticReflection may work around bytecode caches that strip off comments.
 
 
 ## Inspirations
@@ -236,14 +163,15 @@ if (!$class->isSubclassOf('Condition\Absolute\Root')) {
 Static/Reflection:
 
 * Doctrine's (Static) [Reflection](https://github.com/doctrine/common/tree/master/lib/Doctrine/Common/Reflection)
+* phpDocumentor's [Reflection](https://github.com/phpDocumentor/Reflection)
 * Zend Framework's [Reflection](https://github.com/zendframework/zf2/tree/master/library/Zend/Server/Reflection)
 
 PHPDoc tags/annotations parsing:
 
 * PHPUnit's [Util\Test](https://github.com/sebastianbergmann/phpunit/blob/master/src/Util/Test.php)
 * Doctrine's [Annotations](https://github.com/doctrine/annotations/tree/master/lib/Doctrine/Common/Annotations)
-* phpDocumentor's [Descriptor](https://github.com/phpDocumentor/phpDocumentor2/tree/develop/src/phpDocumentor/Descriptor)
-* Shira's [DocComment](https://github.com/ShiraNai7/php-doc-comment)
+* phpDocumentor's [ReflectionDocBlock](https://github.com/phpDocumentor/ReflectionDocBlock) + [Descriptor](https://github.com/phpDocumentor/phpDocumentor2/tree/develop/src/phpDocumentor/Descriptor)
+* Kuria's [PhpDocComment](https://github.com/kuria/php-doc-comment)
 * Philip Graham's [Annotations](https://github.com/pgraham/php-annotations)
 
 
