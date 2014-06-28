@@ -987,7 +987,7 @@ EOC
    * @dataProvider providerIsSubclassOfFalseConditions
    */
   public function testIsSubclassOfSelfOrNothing($info, $ancestor) {
-    $reflector = $this->getClassReflectorMock($info, ['isSubclassOfAny', 'isSubclassOfAnyAncestors', 'implementsInterface']);
+    $reflector = $this->getClassReflectorMock($info, ['isSubclassOfAny', 'isSubclassOfAnyAncestors']);
 
     $reflector
       ->expects($this->never())
@@ -995,9 +995,6 @@ EOC
     $reflector
       ->expects($this->never())
       ->method('isSubclassOfAnyAncestors');
-    $reflector
-      ->expects($this->never())
-      ->method('implementsInterface');
 
     $this->assertFalse($reflector->isSubclassOf($ancestor));
   }
@@ -1098,7 +1095,6 @@ EOC
 
   /**
    * @covers ::isSubclassOf
-   * @covers ::implementsInterface
    * @covers ::isSubclassOfAnyAncestors
    * @runInSeparateProcess
    */
