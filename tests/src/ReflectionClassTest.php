@@ -309,6 +309,86 @@ class Name {}
 ';
     $cases[] = [$expected, $content];
 
+    // The last doc comment block applies (without namespace).
+    $expected = [
+      'fqcn' => 'Name',
+      T_DOC_COMMENT => '/**
+ * Class docblock.
+ */',
+      T_CLASS => 'Name',
+    ];
+    $content = '<?php
+/**
+ * File docblock.
+ */
+/**
+ * Class docblock.
+ */
+class Name {}
+';
+    $cases[] = [$expected, $content];
+
+    // A namespace delimits the doc comment block search scope.
+    $expected = [
+      'fqcn' => 'Space\Name',
+      T_NAMESPACE => 'Space',
+      T_CLASS => 'Space\Name',
+    ];
+    $content = '<?php
+/**
+ * File docblock.
+ */
+namespace Space;
+class Name {}
+';
+    $cases[] = [$expected, $content];
+
+    // A function delimits the doc comment block search scope.
+    $expected = [
+      'fqcn' => 'Name',
+      T_CLASS => 'Name',
+    ];
+    $content = '<?php
+/**
+ * File docblock.
+ */
+function foo() {}
+class Name {}
+';
+    $cases[] = [$expected, $content];
+
+    // Any garbage between the doc comment and the class/element is ignored.
+    // @see http://php.net/manual/en/reflectionclass.getdoccomment.php#115286
+    $expected = [
+      'fqcn' => 'Space\Name',
+      T_DOC_COMMENT => '/**
+ * Class docblock.
+ */',
+      T_NAMESPACE => 'Space',
+      T_USE => ['Baz' => 'Bar\Baz'],
+      T_CLASS => 'Space\Name',
+    ];
+    $content = '<?php
+/**
+ * File docblock.
+ */
+namespace Space;
+  /**
+ * Class docblock.
+ */  
+
+use Bar\Baz;
+const FOO = "BAR";
+$ns = "bar";
+$a = 2 + 1;
+#/** what? */
+// ^^ A single-line T_DOC_COMMENT is invisible by commenting it out.
+count(array());
+
+class Name {}
+';
+    $cases[] = [$expected, $content];
+
     // Abstract.
     $expected = [
       'fqcn' => 'Name',

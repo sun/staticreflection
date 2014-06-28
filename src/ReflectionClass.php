@@ -176,6 +176,10 @@ class ReflectionClass extends \ReflectionClass {
             $context[] = $token[1];
             unset($context, $context_id);
           }
+          // A namespace declaration terminates the T_DOC_COMMENT scope.
+          elseif ($id === T_NAMESPACE) {
+            $result[T_DOC_COMMENT] = array();
+          }
           // Create a new sub-element for contexts supporting multiple values.
           elseif ($id === T_USE || $id === T_IMPLEMENTS || $id === T_EXTENDS) {
             $context = &$context[];
@@ -190,6 +194,10 @@ class ReflectionClass extends \ReflectionClass {
         // Not a result context; append content to last result context.
         elseif (isset($context_id) && $id !== T_WHITESPACE && $id !== T_COMMENT) {
           $context .= $token[1];
+        }
+        // A function definition terminates the T_DOC_COMMENT scope.
+        elseif ($id === T_FUNCTION) {
+          $result[T_DOC_COMMENT] = array();
         }
       }
       // Append simple strings to last result context.
