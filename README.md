@@ -68,9 +68,10 @@ helper classes are filtered out:
       }
 
       // …optionally prepare them for a listing/later selection:
+      $doc_comment = $class->getDocComment();
       $list[$classname] = array(
-        'summary' => $class->getSummary(),
-        'covers' => $class->getAnnotations()['coversDefaultClass'][0],
+        'summary' => $doc_comment->getSummary(),
+        'covers' => $doc_comment->getAnnotations()['coversDefaultClass'][0],
       );
     }
     echo json_encode($list, JSON_PRETTY_PRINT);
@@ -166,7 +167,7 @@ Static/Reflection:
 * phpDocumentor's [Reflection](https://github.com/phpDocumentor/Reflection)
 * Zend Framework's [Reflection](https://github.com/zendframework/zf2/tree/master/library/Zend/Server/Reflection)
 
-PHPDoc tags/annotations parsing:
+PHPDoc tags/annotations:
 
 * PHPUnit's [Util\Test](https://github.com/sebastianbergmann/phpunit/blob/master/src/Util/Test.php)
 * Doctrine's [Annotations](https://github.com/doctrine/annotations/tree/master/lib/Doctrine/Common/Annotations)

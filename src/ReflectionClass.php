@@ -18,16 +18,16 @@ namespace Sun\StaticReflection;
  * 1. trigger the classloader to autoload each file
  * 2. trigger the classloader to recursively autoload all parent classes and
  *    interfaces
- * 3. exceed reasonable CPU and memory consumption very quickly.
+ * 3. exceed a reasonable memory consumption very quickly.
  *
  * Usage is identical to \ReflectionClass. For that reason (and type-hint
  * compatibility), this class wraps \ReflectionClass.
  *
- * Note: The read-only public property \ReflectionClass::$name does not get
- * populated by this implementation. Use ReflectionClass::getName() instead.
- *
- * Optionally, the doc comment block of the statically reflected class can be
- * parsed for its PHPDoc summary line as well as (simple) tags/annotations.
+ * Notes:
+ * - The public \ReflectionClass::$name property is read-only and cannot be
+ *   populated by this implementation. Use ReflectionClass::getName() instead.
+ * - ReflectionClass::getDocComment() returns an ReflectionDocComment instance
+ *   offering methods to introspect the PHPDoc comment block.
  *
  * @author Daniel F. Kudwien (sun)
  *
@@ -39,6 +39,7 @@ class ReflectionClass extends \ReflectionClass {
   private $pathname;
   private $info;
   private static $ancestorCache = array();
+  private $docComment;
 
   /**
    * Constructs a new ReflectionClass.
@@ -286,101 +287,15 @@ class ReflectionClass extends \ReflectionClass {
 
   /**
    * {@inheritdoc}
+   *
+   * @return \Sun\StaticReflection\ReflectionDocComment
+   *   A ReflectionDocComment instance.
    */
   public function getDocComment() {
-    return $this->info[T_DOC_COMMENT];
-  }
-
-  /**
-   * Returns the cleaned doc commment block (without surrounding asterisks).
-   *
-   * @param string $docblock
-   *   The original doc comment block, as returned by
-   *   ReflectionClass::getDocComment().
-   *
-   * @return string
-   */
-  public static function getPlainDocComment($docblock) {
-    $plainDocComment = preg_replace([
-      // Strip trailing '*/', leading '/**', and '*' prefixes.
-      '@^[ \t]*\*+/$|^[ \t]*/?\*+[ \t]?@m',
-      // Normalize line endings.
-      '@\r?\n@',
-    ], ['', "\n"], $docblock);
-    $plainDocComment = trim($plainDocComment, "\n");
-    if ($plainDocComment !== '') {
-      $plainDocComment .= "\n";
+    if (!isset($this->docComment)) {
+      $this->docComment = new ReflectionDocComment($this->info[T_DOC_COMMENT]);
     }
-    return $plainDocComment;
-  }
-
-  /**
-   * Returns the summary line of the class doc comment block.
-   *
-   * @return string
-   *   The PHPDoc summary line.
-   */
-  public function getSummary() {
-    return self::parseSummary(self::getPlainDocComment($this->getDocComment()));
-  }
-
-  /**
-   * Parses the summary line from a plain doc comment block.
-   *
-   * @param string $plainDocComment
-   *   The plain doc comment block (without surrounding asterisks), as returned
-   *   by ReflectionClass::getPlainDocComment().
-   *
-   * @return string
-   *   The PHPDoc summary line.
-   */
-  public static function parseSummary($plainDocComment) {
-    // Strip everything starting with the first PHPDoc tag/annotation.
-    $summary = preg_replace('/^@.+/ms', '', $plainDocComment);
-
-    // Extract first paragraph (two newlines).
-    if (preg_match('@(.+?)(?=\n\n)@s', $summary, $matches)) {
-      $summary = $matches[1];
-    }
-
-    // Join multiple lines onto one.
-    return trim(strtr($summary, "\n", ' '));
-  }
-
-  /**
-   * Returns the PHPDoc tags/annotations of the class doc comment block.
-   *
-   * @return array
-   *   The parsed annotations. Each value is an array of values.
-   */
-  public function getAnnotations() {
-    return self::parseAnnotations(self::getPlainDocComment($this->getDocComment()));
-  }
-
-  /**
-   * Parses the PHPDoc tags/annotations of a plain doc comment block.
-   *
-   * Only single-line tags/annotations (key/value pairs) are supported.
-   *
-   * @param string $plainDocComment
-   *   The plain doc comment block (without surrounding asterisks), as returned
-   *   by ReflectionClass::getPlainDocComment().
-   *
-   * @return array
-   *   The parsed annotations. Each value is an array of values.
-   *
-   * @see \PHPUnit_Util_Test::parseAnnotations()
-   * @author Sebastian Bergmann <sebastian@phpunit.de>
-   * @copyright 2001-2014 Sebastian Bergmann <sebastian@phpunit.de>
-   */
-  public static function parseAnnotations($plainDocComment) {
-    $annotations = array();
-    if (preg_match_all('/^[ \t]*@(?P<name>[A-Za-z_-]+)(?:[ \t]+(?P<value>.*?))?[ \t]*$/m', $plainDocComment, $matches)) {
-      for ($i = 0, $ii = count($matches[0]); $i < $ii; ++$i) {
-        $annotations[$matches['name'][$i]][] = $matches['value'][$i];
-      }
-    }
-    return $annotations;
+    return $this->docComment;
   }
 
   /**
