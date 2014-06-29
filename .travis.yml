@@ -8,7 +8,7 @@ php:
 before_script:
   - composer self-update
   - composer install --prefer-source
-  - composer require -n satooshi/php-coveralls:dev-master
+  - composer require -n satooshi/php-coveralls:dev-master codeclimate/php-test-reporter:dev-master
 
 script:
   - phpunit --coverage-text --coverage-clover build/logs/clover.xml
@@ -19,3 +19,4 @@ matrix:
 
 after_success:
   - php vendor/bin/coveralls -v
+  - CODECLIMATE_REPO_TOKEN=2f39475bee90cc6943fbe69e0041b29b56f7ad597f2c428a2df4372683c43189 ./vendor/bin/test-reporter
