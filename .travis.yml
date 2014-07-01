@@ -19,4 +19,5 @@ matrix:
 
 after_success:
   - php vendor/bin/coveralls -v
-  - CODECLIMATE_REPO_TOKEN=2f39475bee90cc6943fbe69e0041b29b56f7ad597f2c428a2df4372683c43189 ./vendor/bin/test-reporter
+  - "CODECLIMATE_REPO_TOKEN=2f39475bee90cc6943fbe69e0041b29b56f7ad597f2c428a2df4372683c43189 ./vendor/bin/test-reporter --stdout > codeclimate.json"
+  - "curl -v -X POST -d @codeclimate.json -H 'Content-Type: application/json' -H 'User-Agent: php-test-reporter' https://codeclimate.com/test_reports"
